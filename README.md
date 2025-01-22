@@ -99,6 +99,12 @@ local default_config = {
 }
 ```
 
+You can also define Hightlight groups to modify Chosen ui:
+
+- ChosenIndex - default index hl
+- ChosenDelete - index hl in delete mode
+- ChosenSwap - index hl in swap mode
+
 ## Usage
 
 After installation and quick start, you will be able to toggle chosen window.
