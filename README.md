@@ -143,6 +143,6 @@ chosen.dump_index()
 
 ## Alternatives
 
-- [mini.visits](https://github.com/echasnovski/mini.visits)
-- [arrow](https://github.com/otavioschwanck/arrow.nvim.git)
+- [mini.visits](https://github.com/echasnovski/mini.visits) - inspiration for index data file
+- [arrow](https://github.com/otavioschwanck/arrow.nvim.git) - inspiration for ui
 - [harpoon](https://github.com/ThePrimeagen/harpoon/tree/harpoon2)
