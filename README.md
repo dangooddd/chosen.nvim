@@ -110,9 +110,9 @@ You can also define Hightlight groups to modify Chosen ui:
 After installation and quick start, you will be able to toggle chosen window.
 
 In chosen buffer you have only 4 actions:
-- Save current buffer to Chosen index
-- Toggle delete mode
-- Toggle swap mode
+- Save current buffer to Chosen index (c by default)
+- Toggle delete mode (d by default)
+- Toggle swap mode (s by default)
 - Press key from index_keys variable in config
 
 In delete mode, key press will delete file from the list. Thats is
