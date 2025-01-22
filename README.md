@@ -8,6 +8,7 @@ https://github.com/user-attachments/assets/c50ec361-40d2-4a2b-b1c0-b7125b3d2136
 - [Quick Start](#quick-start)
 - [Options](#options)
 - [Usage](#usage)
+- [Alternatives](#alternatives)
 
 ## Requirements
 
@@ -124,7 +125,6 @@ If none of modes is active, key press will open file
 ### Chosen data file (index)
 
 Chosen stores its data in format of lua table that called index
-
 By default, this plugin will load this file on setup and save it on VimLeavePre event
 
 To disable autowrite only for current session:
@@ -140,3 +140,9 @@ local chosen = require("chosen")
 chosen.index = chosen.load_index()
 chosen.dump_index()
 ```
+
+## Alternatives
+
+- [mini.visits](https://github.com/echasnovski/mini.visits)
+- [arrow](https://github.com/otavioschwanck/arrow.nvim.git)
+- [harpoon](https://github.com/ThePrimeagen/harpoon/tree/harpoon2)
