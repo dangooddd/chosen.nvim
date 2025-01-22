@@ -138,7 +138,6 @@ H.delete = function(cwd, fname)
     if H.index[cwd] == nil then return end
 
     for i, file in ipairs(H.index[cwd] or {}) do
-        file = vim.fs.joinpath(cwd, file)
         if file == fname then
             table.remove(H.index[cwd], i)
         end
@@ -156,7 +155,6 @@ H.swap = function(cwd, lhs, rhs)
     -- find indexes for swap files
     local li, ri = -1, -1
     for i, file in ipairs(H.index[cwd] or {}) do
-        file = vim.fs.joinpath(cwd, file)
         if file == lhs then li = i end
         if file == rhs then ri = i end
     end
@@ -177,7 +175,8 @@ end
 ---@param fname string
 H.save = function(cwd, fname)
     cwd = cwd or vim.uv.cwd()
-    fname = vim.fn.fnamemodify(fname, ":~:.")
+    -- use only absolute path to prevent issues
+    fname = vim.fn.fnamemodify(fname, ":p")
     -- ensure that cwd is not nil
     if not cwd then return end
     -- ensure that index exist
