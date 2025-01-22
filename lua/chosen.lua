@@ -1,13 +1,17 @@
 local M = {} -- module
 local H = {} -- hidden module
+local uv = vim.uv or vim.loop
 
 local default_config = {
-    -- path where Chosen will store its data
+    -- Path where Chosen will store its data
     store_path = vim.fn.stdpath("data") .. "/chosen",
-    -- keys that will be used to manipulate Chosen files
+    -- Keys that will be used to manipulate Chosen files
     index_keys = "123456789zxcbnmZXVBNMafghjklAFGHJKLwrtyuiopWRTYUIOP",
-    -- window specific options
-    -- some will be passed in vim.api.nvim_open_win
+    -- Disables autowrite of chosen index on VimLeavePre
+    -- Alternatively, you can toggle this with vim.g.chosen_disable_autorwrite
+    disable_autowrite = false,
+    -- Window specific options
+    -- Some will be passed in vim.api.nvim_open_win
     float = {
         max_height = 10,
         min_height = 1,
@@ -16,23 +20,23 @@ local default_config = {
         border = "rounded",
         title = " Chosen ",
         title_pos = "center",
-        -- options to pass to vim.wo
+        -- Options to pass to vim.wo
         win_options = {
-            -- equivalent to set vim.wo.winhl
+            -- Equivalent to set vim.wo.winhl
             winhl = "NormalFloat:Normal,FloatBorder:Normal,FloatTitle:Title",
         },
     },
-    -- options to pass to vim.bo
+    -- Options to pass to vim.bo
     buf_options = {
         filetype = "chosen",
     },
-    -- mappings in Chosen buffer
+    -- Mappings in Chosen buffer
     mappings = {
-        -- save current file
+        -- Save current file
         save = "c",
-        -- toggle delete mode
+        -- Toggle delete mode
         delete = "d",
-        -- toggle swap mode
+        -- Toggle swap mode
         swap = "s",
     },
 }
@@ -43,11 +47,11 @@ local default_config = {
 ---@class chosen.Index
 H.index = {}
 
----@param store_path nil|string
+---@param store_path string?
 ---@return chosen.Index
 M.load_index = function(store_path)
     store_path = store_path or H.config.store_path
-    if not vim.uv.fs_stat(store_path) then return {} end
+    if not uv.fs_stat(store_path) then return {} end
 
     -- load file as lua
     local ok, out = pcall(dofile, store_path)
@@ -55,15 +59,18 @@ M.load_index = function(store_path)
     return out
 end
 
----@param store_path nil|string
-M.dump_index = function(store_path)
+---@param store_path string? Path where Chosen index table will be stored. If nil passed, use store path from config
+---@param index chosen.Index? Chosen index to dump. If nil passed, use default
+M.dump_index = function(store_path, index)
     store_path = store_path or H.config.store_path
+    index = index or H.index
+
     local path_dir = vim.fs.dirname(store_path)
     -- ensure parent directory exist
     if not vim.fn.mkdir(path_dir, "p") then return nil end
 
     -- write file, which returns lua table with Chosen index
-    local lines = vim.split(vim.inspect(H.index), "\n")
+    local lines = vim.split(vim.inspect(index), "\n")
     lines[1] = "return " .. lines[1]
     vim.fn.writefile(lines, store_path)
 end
@@ -72,6 +79,7 @@ end
 ---@class chosen.SetupOpts
 ---@field store_path? string File where Chosen data will be stored
 ---@field index_keys? string Indexes that will be shown in Chosen window
+---@field disable_autowrite? boolean Disables autowriting on VimLeavePre event
 ---@field float? chosen.WindowOptions Options for vim.api.nvim_open_win function and other ui related settings
 ---@field buf_options? table<string, any> Buffer options to pass to vim.bo
 ---@field mappings? chosen.Mappings Mappings in Chosen buffer
@@ -98,6 +106,8 @@ M.setup = function(opts)
     H.config.float.min_height = math.max(1, H.config.float.min_height)
     H.config.float.min_width = math.max(1, H.config.float.min_width)
 
+    vim.g.chosen_disable_autowrite = H.config.disable_autowrite
+
     -- highlights
     vim.api.nvim_set_hl(0, "ChosenIndex", {
         link = "DiagnosticOk",
@@ -122,6 +132,10 @@ M.setup = function(opts)
         group = "Chosen",
         once = true,
         callback = function()
+            -- exit if disabled
+            if vim.g.chosen_disable_autowrite then return end
+
+            -- save with default values
             M.dump_index()
         end,
     })
@@ -133,7 +147,7 @@ end
 ---@param cwd string?
 ---@param fname string File name to delete
 H.delete = function(cwd, fname)
-    cwd = cwd or vim.uv.cwd()
+    cwd = cwd or uv.cwd()
     fname = vim.fn.fnamemodify(fname, ":p")
     if H.index[cwd] == nil then return end
 
@@ -148,7 +162,7 @@ end
 ---@param lhs string First file path to swap
 ---@param rhs string Second file path to swap
 H.swap = function(cwd, lhs, rhs)
-    cwd = cwd or vim.uv.cwd()
+    cwd = cwd or uv.cwd()
     lhs = vim.fn.fnamemodify(lhs, ":p")
     rhs = vim.fn.fnamemodify(rhs, ":p")
 
@@ -174,7 +188,7 @@ end
 ---@param cwd string?
 ---@param fname string
 H.save = function(cwd, fname)
-    cwd = cwd or vim.uv.cwd()
+    cwd = cwd or uv.cwd()
     -- use only absolute path to prevent issues
     fname = vim.fn.fnamemodify(fname, ":p")
     -- ensure that cwd is not nil
@@ -227,7 +241,7 @@ H.render_buf = function(buf)
     vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
 
     local keys = H.config.index_keys
-    local cwd = vim.uv.cwd()
+    local cwd = uv.cwd()
     local lines = {}
 
     for i, fname in ipairs(H.index[cwd] or {}) do
@@ -399,7 +413,6 @@ H.open_win = function(buf)
     return win
 end
 
--- All functionality of Chosen is tied to one function
 -- This function opens floating window with all other mappings
 M.toggle = function()
     -- toggle
