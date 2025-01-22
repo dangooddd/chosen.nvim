@@ -91,7 +91,7 @@ end
 ---@field delete? string Mapping for toggle delete mode. In delete mode any key from index_keys will delete file instead of open
 ---@field swap? string Mapping for toggle swap mode. In swap mode you need to type two keys to swap them
 
----@param opts chosen.SetupOpts
+---@param opts chosen.SetupOpts?
 M.setup = function(opts)
     H.config = vim.tbl_deep_extend("force", default_config, opts or {})
     -- those should be positive
