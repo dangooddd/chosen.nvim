@@ -120,3 +120,23 @@ In delete mode, key press will delete file from the list. Thats is
 In swap mode, you need to press two keys. After that, files will be swapped
 
 If none of modes is active, key press will open file
+
+### Chosen data file (index)
+
+Chosen stores its data in format of lua table that called index
+
+By default, this plugin will load this file on setup and save it on VimLeavePre event
+
+To disable autowrite only for current session:
+
+```lua
+vim.g.chosen_disable_autorwrite = true
+```
+
+Also you can manage index load and save by yourself:
+
+```lua
+local chosen = require("chosen")
+chosen.index = chosen.load_index()
+chosen.dump_index()
+```

@@ -45,7 +45,7 @@ local default_config = {
 ---Stores in following format
 ---[ ["cwd"] = { "file1", "file2" } ]
 ---@class chosen.Index
-H.index = {}
+M.index = {}
 
 ---@param store_path string?
 ---@return chosen.Index
@@ -63,7 +63,7 @@ end
 ---@param index chosen.Index? Chosen index to dump. If nil passed, use default
 M.dump_index = function(store_path, index)
     store_path = store_path or H.config.store_path
-    index = index or H.index
+    index = index or M.index
 
     local path_dir = vim.fs.dirname(store_path)
     -- ensure parent directory exist
@@ -141,7 +141,7 @@ M.setup = function(opts)
     })
 
     -- load index on setup
-    H.index = M.load_index()
+    M.index = M.load_index()
 end
 
 ---@param cwd string?
@@ -149,11 +149,11 @@ end
 H.delete = function(cwd, fname)
     cwd = cwd or uv.cwd()
     fname = vim.fn.fnamemodify(fname, ":p")
-    if H.index[cwd] == nil then return end
+    if M.index[cwd] == nil then return end
 
-    for i, file in ipairs(H.index[cwd] or {}) do
+    for i, file in ipairs(M.index[cwd] or {}) do
         if file == fname then
-            table.remove(H.index[cwd], i)
+            table.remove(M.index[cwd], i)
         end
     end
 end
@@ -168,14 +168,14 @@ H.swap = function(cwd, lhs, rhs)
 
     -- find indexes for swap files
     local li, ri = -1, -1
-    for i, file in ipairs(H.index[cwd] or {}) do
+    for i, file in ipairs(M.index[cwd] or {}) do
         if file == lhs then li = i end
         if file == rhs then ri = i end
     end
 
     -- swap only if all files was found
     if li ~= -1 and ri ~= -1 then
-        H.index[cwd][li], H.index[cwd][ri] = H.index[cwd][ri], H.index[cwd][li]
+        M.index[cwd][li], M.index[cwd][ri] = M.index[cwd][ri], M.index[cwd][li]
     end
 end
 
@@ -194,11 +194,11 @@ H.save = function(cwd, fname)
     -- ensure that cwd is not nil
     if not cwd then return end
     -- ensure that index exist
-    if not H.index[cwd] then H.index[cwd] = {} end
+    if not M.index[cwd] then M.index[cwd] = {} end
 
     -- find existing file in index
     local found = false
-    for _, file in pairs(H.index[cwd]) do
+    for _, file in pairs(M.index[cwd]) do
         if file == fname then
             found = true
         end
@@ -206,7 +206,7 @@ H.save = function(cwd, fname)
 
     -- insert if not duplicate
     if not found then
-        table.insert(H.index[cwd], fname)
+        table.insert(M.index[cwd], fname)
     end
 end
 
@@ -244,7 +244,7 @@ H.render_buf = function(buf)
     local cwd = uv.cwd()
     local lines = {}
 
-    for i, fname in ipairs(H.index[cwd] or {}) do
+    for i, fname in ipairs(M.index[cwd] or {}) do
         -- do not render bif amount of files
         if i > #keys then break end
 
