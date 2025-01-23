@@ -37,6 +37,13 @@ local default_config = {
     },
 }
 
+---Utility function to set default table value
+---@param tbl table
+---@param val any
+local tbl_default = function(tbl, val)
+    setmetatable(tbl, { __index = function() return val end })
+end
+
 ---Table where Chosen stores files
 ---Stores in following format
 ---[ ["cwd"] = { "file1", "file2" } ]
@@ -77,10 +84,10 @@ end
 ---@field store_path? string File where Chosen data will be stored
 ---@field index_keys? string Indexes that will be shown in Chosen window
 ---@field disable_autowrite? boolean Disables autowriting on VimLeavePre event
----@field float? chosen.WindowOptions Options for vim.api.nvim_open_win function and other ui related settings
+---@field float? chosen.FloatOpts for vim.api.nvim_open_win function and other ui related settings
 ---@field mappings? chosen.Mappings Mappings in Chosen buffer
 
----@class chosen.WindowOptions
+---@class chosen.FloatOpts
 ---@field min_width? integer Min width, integer value > 1
 ---@field min_height? integer Min height, integer value > 1
 ---@field max_width? integer
@@ -140,6 +147,7 @@ M.setup = function(opts)
     M.index = M.load_index()
 end
 
+---Delete file from index entry for given cwd
 ---@param cwd string?
 ---@param fname string File name to delete
 H.delete = function(cwd, fname)
@@ -156,6 +164,7 @@ H.delete = function(cwd, fname)
     end
 end
 
+---Swap two files in index entry for given cwd
 ---@param cwd string?
 ---@param lhs string First file path to swap
 ---@param rhs string Second file path to swap
@@ -179,6 +188,7 @@ H.swap = function(cwd, lhs, rhs)
     end
 end
 
+---Edit file with given name
 ---@param fname string
 H.edit = function(fname)
     -- prefer relative path for edit command
@@ -188,6 +198,7 @@ H.edit = function(fname)
     pcall(vim.cmd.edit, fname)
 end
 
+---Save file to index entry for given cwd
 ---@param cwd string?
 ---@param fname string
 H.save = function(cwd, fname)
@@ -203,21 +214,117 @@ H.save = function(cwd, fname)
     end
 end
 
----@param buf integer
+---Callbacks to call on mappings
+---@type table<string, table>
+H.callbacks = {
+    -- actions on mode keys like delete|swap|save
+    buf = {
+        ---Clear swap|delete mode or close window
+        ---@param buf chosen.Buf
+        escape = function(buf)
+            if vim.b[buf].chosen_mode == "" then
+                pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
+            else
+                vim.b[buf].chosen_mode = ""
+                H.render_highlights(buf)
+            end
+        end,
+
+        ---Save current buffer and re-render window
+        ---@param buf chosen.Buf
+        save = function(buf)
+            H.save(nil, vim.b[buf].chosen_fname)
+            H.open_win(buf)
+        end,
+
+        ---Toggle delete mode
+        ---@param buf chosen.Buf
+        delete = function(buf)
+            if vim.b[buf].chosen_mode == "delete" then
+                vim.b[buf].chosen_mode = ""
+            else
+                vim.b[buf].chosen_mode = "delete"
+            end
+            H.render_highlights(buf)
+        end,
+
+        ---Toggle swap mode
+        ---@param buf chosen.Buf
+        swap = function(buf)
+            if vim.b[buf].chosen_mode == "swapfirst" or
+                vim.b[buf].chosen_mode == "swapsecond" then
+                vim.b[buf].chosen_mode = ""
+            else
+                vim.b[buf].chosen_mode = "swapfirst"
+            end
+            H.render_highlights(buf)
+        end,
+    },
+
+    -- actions on keypress
+    -- different callbacks on differen modes
+    mode = {
+        ---Close window and edit selected file
+        ---@param buf chosen.Buf
+        ---@param fname string
+        [""] = function(buf, fname)
+            pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
+            H.edit(fname)
+        end,
+
+        ---Delete file from list
+        ---@param buf chosen.Buf
+        ---@param fname string
+        ["delete"] = function(buf, fname)
+            H.delete(nil, fname)
+            vim.b[buf].chosen_mode = ""
+
+            -- re-render window because number of files is probably changed
+            H.open_win(buf)
+        end,
+
+        ---Enter second stage of swapping
+        ---@param buf chosen.Buf
+        ---@param fname string
+        ["swapfirst"] = function(buf, fname)
+            vim.b[buf].chosen_swap = fname
+            vim.b[buf].chosen_mode = "swapsecond"
+        end,
+
+        ---Swap files
+        ---@param buf chosen.Buf
+        ---@param fname string
+        ["swapsecond"] = function(buf, fname)
+            H.swap(nil, vim.b[buf].chosen_swap, fname)
+            vim.b[buf].chosen_swap = nil
+            vim.b[buf].chosen_mode = ""
+
+            -- re-render only buffer
+            H.render_buf(buf)
+            H.render_highlights(buf)
+        end,
+    },
+}
+
+-- open file by default
+tbl_default(H.callbacks.mode, H.callbacks.mode[""])
+
+---@param buf chosen.Buf
 H.render_highlights = function(buf)
     vim.api.nvim_buf_clear_namespace(buf, -1, 0, -1)
 
     ---@type integer
     vim.b[buf].chosen_height = vim.b[buf].chosen_height or 0 -- ensure value exist
 
-    local hl = "ChosenIndex"
-    if vim.b[buf].chosen_mode == "delete" then
-        hl = "ChosenDelete"
-    elseif vim.b[buf].chosen_mode == "swapfirst" or
-        vim.b[buf].chosen_mode == "swapsecond"
-    then
-        hl = "ChosenSwap"
-    end
+    local mode_highlights = {
+        ["delete"] = "ChosenDelete",
+        ["swapfirst"] = "ChosenSwap",
+        ["swapsecond"] = "ChosenSwap",
+    }
+    -- default hl
+    tbl_default(mode_highlights, "ChosenIndex")
+
+    local hl = mode_highlights[vim.b[buf].chosen_mode]
 
     -- set hl based on current Chosen mode
     for i = 0, vim.b[buf].chosen_height - 1 do
@@ -230,15 +337,17 @@ H.render_highlights = function(buf)
     end
 end
 
----@param buf integer?
+---@param buf chosen.Buf?
 H.render_buf = function(buf)
+    ---@type chosen.Buf
     buf = buf or vim.api.nvim_get_current_buf()
     vim.bo[buf].modifiable = true -- by default chosen buffer is not modifiable
     vim.b[buf].chosen_width = 1   -- for width update on repeated rendering
 
-    local keys = H.config.index_keys
     local cwd = uv.cwd()
+    local keys = H.config.index_keys
     local lines = {}
+
     local keymap_opts = {
         buffer = buf,
         noremap = true,
@@ -249,38 +358,16 @@ H.render_buf = function(buf)
         -- do not render more than index_keys can handle
         if i > #keys then break end
 
-        local k = keys:sub(i, i)
+        local key = keys:sub(i, i)
         fname = vim.fn.fnamemodify(fname, ":~:.")
-        lines[i] = string.format(" %s %s ", k, fname)
+        lines[i] = string.format(" %s %s ", key, fname)
 
         -- calculate max width of a line
         vim.b[buf].chosen_width = math.max(vim.b[buf].chosen_width, #lines[i])
 
         -- keybinds
-        vim.keymap.set("n", k, function()
-            if vim.b[buf].chosen_mode == "delete" then
-                -- delete and clear mode
-                -- re-render window because number of files is probably changed
-                H.delete(nil, fname)
-                vim.b[buf].chosen_mode = ""
-                H.open_win(buf)
-            elseif vim.b[buf].chosen_mode == "swapfirst" then
-                -- enter second stage of swapping
-                vim.b[buf].chosen_swap = fname
-                vim.b[buf].chosen_mode = "swapsecond"
-            elseif vim.b[buf].chosen_mode == "swapsecond" then
-                -- swap on second stage
-                -- re-render only buffer
-                H.swap(nil, vim.b[buf].chosen_swap, fname)
-                vim.b[buf].chosen_swap = nil
-                vim.b[buf].chosen_mode = ""
-                H.render_buf(buf)
-                H.render_highlights(buf)
-            else
-                -- close window and edit selected file
-                pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
-                H.edit(fname)
-            end
+        vim.keymap.set("n", key, function()
+            H.callbacks.mode[vim.b[buf].chosen_mode](buf, fname)
         end, keymap_opts)
     end
 
@@ -298,7 +385,7 @@ H.render_buf = function(buf)
 end
 
 ---@param fname string?
----@return integer
+---@return chosen.Buf
 H.create_buf = function(fname)
     fname = fname or vim.fn.expand("%:p")
     local buf = vim.api.nvim_create_buf(false, true)
@@ -309,7 +396,7 @@ H.create_buf = function(fname)
     vim.b[buf].chosen_width = 0
     vim.bo[buf].filetype = "chosen"
 
-    -- keybinds
+    -- set mappings
     local keymap_opts = {
         silent = true,
         buffer = buf,
@@ -318,43 +405,24 @@ H.create_buf = function(fname)
     }
 
     local mappings = H.config.mappings
+    local callbacks = H.callbacks
 
     vim.keymap.set("n", "q", "<cmd>q<CR>", keymap_opts)
 
     vim.keymap.set("n", "<Esc>", function()
-        if vim.b[buf].chosen_mode == "" then
-            vim.api.nvim_win_close(0, false)
-        else
-            vim.b[buf].chosen_mode = ""
-            H.render_highlights(buf)
-        end
+        callbacks.buf.escape(buf)
     end, keymap_opts)
 
-    -- toggle swap mode
     vim.keymap.set("n", mappings.swap, function()
-        if vim.b[buf].chosen_mode == "swapfirst" or
-            vim.b[buf].chosen_mode == "swapsecond" then
-            vim.b[buf].chosen_mode = ""
-        else
-            vim.b[buf].chosen_mode = "swapfirst"
-        end
-        H.render_highlights(buf)
+        callbacks.buf.swap(buf)
     end, keymap_opts)
 
-    -- toggle delete mode
     vim.keymap.set("n", mappings.delete, function()
-        if vim.b[buf].chosen_mode == "delete" then
-            vim.b[buf].chosen_mode = ""
-        else
-            vim.b[buf].chosen_mode = "delete"
-        end
-        H.render_highlights(buf)
+        callbacks.buf.delete(buf)
     end, keymap_opts)
 
-    -- save current buffer and re-render window
     vim.keymap.set("n", mappings.save, function()
-        H.save(nil, vim.b[buf].chosen_fname)
-        H.open_win(buf)
+        callbacks.buf.save(buf)
     end, keymap_opts)
 
     -- auto close window when focus changes
@@ -371,10 +439,9 @@ H.create_buf = function(fname)
 end
 
 ---Get window config for given Chosen buffer
----@param buf integer?
+---@param buf chosen.Buf
 ---@return vim.api.keyset.win_config
 H.win_config = function(buf)
-    buf = buf or 0 -- ensure to return valid config
     local float = H.config.float
 
     local opts = {
@@ -401,8 +468,8 @@ H.win_config = function(buf)
     return opts
 end
 
----@param buf integer?
----@return integer
+---@param buf chosen.Buf?
+---@return chosen.Win
 H.open_win = function(buf)
     buf = buf or H.create_buf()
     -- close existing window
@@ -428,5 +495,8 @@ M.toggle = function()
         H.open_win(H.create_buf())
     end
 end
+
+---@alias chosen.Buf integer Chosen buffer which uses specific buffer local variables
+---@alias chosen.Win integer
 
 return M
