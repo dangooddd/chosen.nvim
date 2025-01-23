@@ -26,10 +26,6 @@ local default_config = {
             winhl = "NormalFloat:Normal,FloatBorder:Normal,FloatTitle:Title",
         },
     },
-    -- Options to pass to vim.bo
-    buf_options = {
-        filetype = "chosen",
-    },
     -- Mappings in Chosen buffer
     mappings = {
         -- Save current file
@@ -81,7 +77,6 @@ end
 ---@field index_keys? string Indexes that will be shown in Chosen window
 ---@field disable_autowrite? boolean Disables autowriting on VimLeavePre event
 ---@field float? chosen.WindowOptions Options for vim.api.nvim_open_win function and other ui related settings
----@field buf_options? table<string, any> Buffer options to pass to vim.bo
 ---@field mappings? chosen.Mappings Mappings in Chosen buffer
 
 ---@class chosen.WindowOptions
@@ -154,6 +149,7 @@ H.delete = function(cwd, fname)
     for i, file in ipairs(M.index[cwd] or {}) do
         if file == fname then
             table.remove(M.index[cwd], i)
+            break
         end
     end
 end
@@ -181,7 +177,10 @@ end
 
 ---@param fname string
 H.edit = function(fname)
+    -- prefer relative path for edit command
+    -- escape name for edit (if name contains spaces, for example)
     fname = vim.fn.fnamemodify(fname, ":.")
+    fname = vim.fn.fnameescape(fname)
     pcall(vim.cmd.edit, fname)
 end
 
@@ -189,23 +188,13 @@ end
 ---@param fname string
 H.save = function(cwd, fname)
     cwd = cwd or uv.cwd()
-    -- use only absolute path to prevent issues
-    fname = vim.fn.fnamemodify(fname, ":p")
-    -- ensure that cwd is not nil
-    if not cwd then return end
-    -- ensure that index exist
-    if not M.index[cwd] then M.index[cwd] = {} end
 
-    -- find existing file in index
-    local found = false
-    for _, file in pairs(M.index[cwd]) do
-        if file == fname then
-            found = true
-        end
-    end
+    if not cwd then return end              -- ensure that cwd is not nil
+    fname = vim.fn.fnamemodify(fname, ":p") -- use only absolute path to prevent issues
+    M.index[cwd] = M.index[cwd] or {}       -- ensure that index exist
 
     -- insert if not duplicate
-    if not found then
+    if not vim.tbl_contains(M.index[cwd], fname) then
         table.insert(M.index[cwd], fname)
     end
 end
@@ -236,20 +225,23 @@ end
 ---@param buf integer?
 H.render_buf = function(buf)
     buf = buf or vim.api.nvim_get_current_buf()
-    vim.b[buf].chosen_width = 1 -- for width update on repeated rendering
-    -- by default chosen buffer is not modifiable
-    vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
+    vim.b[buf].chosen_width = 1   -- for width update on repeated rendering
+    vim.bo[buf].modifiable = true -- by default chosen buffer is not modifiable
 
     local keys = H.config.index_keys
     local cwd = uv.cwd()
     local lines = {}
+    local keymap_opts = {
+        buffer = buf,
+        noremap = true,
+        nowait = true
+    }
 
     for i, fname in ipairs(M.index[cwd] or {}) do
-        -- do not render bif amount of files
+        -- do not render more than index_keys can handle
         if i > #keys then break end
 
         local k = keys:sub(i, i)
-        -- format name to be relative in buffer
         fname = vim.fn.fnamemodify(fname, ":~:.")
         lines[i] = string.format(" %s %s ", k, fname)
 
@@ -260,10 +252,9 @@ H.render_buf = function(buf)
         vim.keymap.set("n", k, function()
             if vim.b[buf].chosen_mode == "delete" then
                 -- delete and clear mode
+                -- re-render window because number of files is probably changed
                 H.delete(nil, fname)
                 vim.b[buf].chosen_mode = ""
-                -- re-render window because number of files is probably changed
-                vim.api.nvim_win_close(0, false)
                 H.open_win(buf)
             elseif vim.b[buf].chosen_mode == "swapfirst" then
                 -- enter second stage of swapping
@@ -271,20 +262,22 @@ H.render_buf = function(buf)
                 vim.b[buf].chosen_mode = "swapsecond"
             elseif vim.b[buf].chosen_mode == "swapsecond" then
                 -- swap on second stage
+                -- re-render only buffer
                 H.swap(nil, vim.b[buf].chosen_swap, fname)
                 vim.b[buf].chosen_swap = nil
                 vim.b[buf].chosen_mode = ""
-                -- re-render only buffer
                 H.render_buf(buf)
                 H.render_highlights(buf)
             else
-                vim.api.nvim_win_close(0, false)
+                -- close window and edit selected file
+                pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
                 H.edit(fname)
             end
-        end)
+        end, keymap_opts)
     end
 
     vim.b[buf].chosen_height = #lines
+
     -- message if buffer is empty
     if #lines == 0 then
         lines[1] = string.format(" Press %s to save ", H.config.mappings.save)
@@ -292,26 +285,21 @@ H.render_buf = function(buf)
     end
 
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-    vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
-    vim.api.nvim_set_option_value("buftype", "nofile", { buf = buf })
+    vim.bo[buf].modifiable = false -- reset modifiable
     H.render_highlights(buf)
 end
 
 ---@param fname string?
 ---@return integer
 H.create_buf = function(fname)
-    fname = fname or vim.fn.expand("%:~:.")
+    fname = fname or vim.fn.expand("%:p")
     local buf = vim.api.nvim_create_buf(false, true)
 
     vim.b[buf].chosen_fname = fname
     vim.b[buf].chosen_mode = ""
-    vim.b[buf].chosen_height = 1
-    vim.b[buf].chosen_width = 1
-
-    -- buffer options
-    for opt, val in pairs(H.config.buf_options) do
-        vim.bo[buf][opt] = val
-    end
+    vim.b[buf].chosen_height = 0
+    vim.b[buf].chosen_width = 0
+    vim.bo[buf].filetype = "chosen"
 
     -- keybinds
     local keymap_opts = {
@@ -334,7 +322,7 @@ H.create_buf = function(fname)
         end
     end, keymap_opts)
 
-    -- toggle modes
+    -- toggle swap mode
     vim.keymap.set("n", mappings.swap, function()
         if vim.b[buf].chosen_mode == "swapfirst" or
             vim.b[buf].chosen_mode == "swapsecond" then
@@ -345,6 +333,7 @@ H.create_buf = function(fname)
         H.render_highlights(buf)
     end, keymap_opts)
 
+    -- toggle delete mode
     vim.keymap.set("n", mappings.delete, function()
         if vim.b[buf].chosen_mode == "delete" then
             vim.b[buf].chosen_mode = ""
@@ -357,20 +346,18 @@ H.create_buf = function(fname)
     -- save current buffer and re-render window
     vim.keymap.set("n", mappings.save, function()
         H.save(nil, vim.b[buf].chosen_fname)
-        vim.api.nvim_win_close(0, false)
         H.open_win(buf)
     end, keymap_opts)
 
-    -- auto close window on focus changes
+    -- auto close window when focus changes
     vim.api.nvim_create_autocmd("BufLeave", {
         group = "Chosen",
         buffer = buf,
         callback = function()
-            pcall(vim.api.nvim_win_close, vim.b[buf].chosen_win, false)
+            pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
         end,
     })
 
-    -- render created buffer
     H.render_buf(buf)
     return buf
 end
@@ -379,6 +366,9 @@ end
 ---@return integer
 H.open_win = function(buf)
     buf = buf or H.create_buf()
+    -- close existing window
+    pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
+
     H.render_buf(buf)
     H.render_highlights(buf)
 
@@ -403,9 +393,9 @@ H.open_win = function(buf)
     opts.row = (vim.api.nvim_win_get_height(0) - opts.height) / 2
     opts.width = math.max(1, opts.width)
     opts.height = math.max(1, opts.height)
+
     local win = vim.api.nvim_open_win(buf, true, opts)
 
-    vim.b[buf].chosen_win = win -- connect buffer and window
     for opt, val in pairs(float.win_options) do
         vim.wo[win][opt] = val
     end
@@ -413,17 +403,13 @@ H.open_win = function(buf)
     return win
 end
 
--- This function opens floating window with all other mappings
+-- toggles Chosen window
 M.toggle = function()
-    -- toggle
-    if vim.b.chosen_win ~= nil then
+    if vim.bo.filetype == "chosen" then
         vim.api.nvim_win_close(0, false)
-        return
+    else
+        H.open_win(H.create_buf())
     end
-
-    local fname = vim.fn.expand("%:~:.")
-    local buf = H.create_buf(fname)
-    H.open_win(buf)
 end
 
 return M

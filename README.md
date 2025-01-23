@@ -84,10 +84,6 @@ local default_config = {
             winhl = "NormalFloat:Normal,FloatBorder:Normal,FloatTitle:Title",
         },
     },
-    -- Options to pass to vim.bo
-    buf_options = {
-        filetype = "chosen",
-    },
     -- Mappings in Chosen buffer
     mappings = {
         -- Save current file
@@ -124,7 +120,7 @@ If none of modes is active, key press will open file
 
 ### Chosen data file (index)
 
-Chosen stores its data in format of lua table that called index
+Chosen stores its data in format of lua table that called index.
 By default, this plugin will load this file on setup and save it on VimLeavePre event
 
 To disable autowrite only for current session:
