@@ -105,9 +105,6 @@ end
 ---@param opts chosen.SetupOpts?
 M.setup = function(opts)
     H.config = vim.tbl_deep_extend("force", default_config, opts or {})
-    -- those should be positive
-    H.config.float.min_height = math.max(1, H.config.float.min_height)
-    H.config.float.min_width = math.max(1, H.config.float.min_width)
 
     vim.g.chosen_disable_autowrite = H.config.disable_autowrite
 
