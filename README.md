@@ -41,6 +41,8 @@ Then add binding to open Chosen window, for example:
 vim.keymap.set("n", "<Enter>", require("chosen").toggle)
 ```
 
+Alternatively, you can use ":Chosen" command in cmdline.
+
 Full example for lazy:
 
 ```lua
@@ -48,6 +50,7 @@ Full example for lazy:
 return {
     "dangooddd/chosen.nvim",
     keys = { "<Enter>" },
+    cmd = "Chosen"
     config = function()
         require("chosen").setup()
         vim.keymap.set("n", "<Enter>", require("chosen").toggle)
@@ -141,4 +144,5 @@ chosen.dump_index()
 
 - [mini.visits](https://github.com/echasnovski/mini.visits) - inspiration for index data file
 - [arrow](https://github.com/otavioschwanck/arrow.nvim.git) - inspiration for ui
-- [harpoon](https://github.com/ThePrimeagen/harpoon/tree/harpoon2)
+- [snipe](https://github.com/leath-dub/snipe.nvim) - general purpose targetted menu
+- [harpoon](https://github.com/ThePrimeagen/harpoon/tree/harpoon2) - most popular alternative

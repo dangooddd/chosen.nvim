@@ -140,6 +140,9 @@ M.setup = function(opts)
         end,
     })
 
+    -- define Chosen user command
+    vim.api.nvim_create_user_command("Chosen", M.toggle, {})
+
     -- load index on setup
     M.index = M.load_index()
 end
