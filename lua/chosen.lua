@@ -41,6 +41,7 @@ local default_config = {
 ---Stores in following format
 ---[ ["cwd"] = { "file1", "file2" } ]
 ---@class chosen.Index
+---@field [string] table<string> Index entry for given cwd
 M.index = {}
 
 ---@param store_path string?
@@ -143,8 +144,9 @@ end
 ---@param fname string File name to delete
 H.delete = function(cwd, fname)
     cwd = cwd or uv.cwd()
+    if not M.index[cwd] then return end
+
     fname = vim.fn.fnamemodify(fname, ":p")
-    if M.index[cwd] == nil then return end
 
     for i, file in ipairs(M.index[cwd] or {}) do
         if file == fname then
@@ -159,12 +161,14 @@ end
 ---@param rhs string Second file path to swap
 H.swap = function(cwd, lhs, rhs)
     cwd = cwd or uv.cwd()
+    if not M.index[cwd] then return end
+
     lhs = vim.fn.fnamemodify(lhs, ":p")
     rhs = vim.fn.fnamemodify(rhs, ":p")
 
     -- find indexes for swap files
     local li, ri = -1, -1
-    for i, file in ipairs(M.index[cwd] or {}) do
+    for i, file in ipairs(M.index[cwd]) do
         if file == lhs then li = i end
         if file == rhs then ri = i end
     end
@@ -188,10 +192,10 @@ end
 ---@param fname string
 H.save = function(cwd, fname)
     cwd = cwd or uv.cwd()
-
     if not cwd then return end              -- ensure that cwd is not nil
+
     fname = vim.fn.fnamemodify(fname, ":p") -- use only absolute path to prevent issues
-    M.index[cwd] = M.index[cwd] or {}       -- ensure that index exist
+    M.index[cwd] = M.index[cwd] or {}       -- ensure that index entry exist
 
     -- insert if not duplicate
     if not vim.tbl_contains(M.index[cwd], fname) then
@@ -202,17 +206,21 @@ end
 ---@param buf integer
 H.render_highlights = function(buf)
     vim.api.nvim_buf_clear_namespace(buf, -1, 0, -1)
+
+    ---@type integer
+    vim.b[buf].chosen_height = vim.b[buf].chosen_height or 0 -- ensure value exist
+
     local hl = "ChosenIndex"
+    if vim.b[buf].chosen_mode == "delete" then
+        hl = "ChosenDelete"
+    elseif vim.b[buf].chosen_mode == "swapfirst" or
+        vim.b[buf].chosen_mode == "swapsecond"
+    then
+        hl = "ChosenSwap"
+    end
 
     -- set hl based on current Chosen mode
-    for i = 0, (vim.b[buf].chosen_height or 1) - 1 do
-        if vim.b[buf].chosen_mode == "delete" then
-            hl = "ChosenDelete"
-        elseif vim.b[buf].chosen_mode == "swapfirst" or
-            vim.b[buf].chosen_mode == "swapsecond" then
-            hl = "ChosenSwap"
-        end
-
+    for i = 0, vim.b[buf].chosen_height - 1 do
         vim.api.nvim_buf_add_highlight(buf, -1, hl, i, 0, 2)
     end
 
@@ -225,8 +233,8 @@ end
 ---@param buf integer?
 H.render_buf = function(buf)
     buf = buf or vim.api.nvim_get_current_buf()
-    vim.b[buf].chosen_width = 1   -- for width update on repeated rendering
     vim.bo[buf].modifiable = true -- by default chosen buffer is not modifiable
+    vim.b[buf].chosen_width = 1   -- for width update on repeated rendering
 
     local keys = H.config.index_keys
     local cwd = uv.cwd()

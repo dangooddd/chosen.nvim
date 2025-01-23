@@ -1,5 +1,5 @@
 # chosen.nvim
-Quickly move between your chosen files, per project
+Quickly move between your chosen files, per-project.
 
 https://github.com/user-attachments/assets/c50ec361-40d2-4a2b-b1c0-b7125b3d2136
 
@@ -112,16 +112,16 @@ In chosen buffer you have only 4 actions:
 - Toggle swap mode (s by default)
 - Press key from index_keys variable in config
 
-In delete mode, key press will delete file from the list. Thats is
+In delete mode, key press will delete file from the list.
 
-In swap mode, you need to press two keys. After that, files will be swapped
+In swap mode, you need to press two keys. After that, files will be swapped.
 
-If none of modes is active, key press will open file
+If none of modes is active, key press will open file.
 
 ### Chosen data file (index)
 
 Chosen stores its data in format of lua table that called index.
-By default, this plugin will load this file on setup and save it on VimLeavePre event
+By default, this plugin will load this file on setup and save it on VimLeavePre event.
 
 To disable autowrite only for current session:
 
