@@ -370,6 +370,37 @@ H.create_buf = function(fname)
     return buf
 end
 
+---Get window config for given Chosen buffer
+---@param buf integer?
+---@return vim.api.keyset.win_config
+H.win_config = function(buf)
+    buf = buf or 0 -- ensure to return valid config
+    local float = H.config.float
+
+    local opts = {
+        border = float.border,
+        relative = "win",
+        style = "minimal",
+        height = math.max(
+            math.min(float.max_height, vim.b[buf].chosen_height or 0),
+            float.min_height,
+            1 -- if value in config lesser than 1
+        ),
+        width = math.max(
+            math.min(float.max_width, vim.b[buf].chosen_width or 0),
+            float.min_width,
+            1 -- if value in config lesser than 1
+        ),
+        title = float.title,
+        title_pos = float.title_pos,
+    }
+
+    opts.col = (vim.api.nvim_win_get_width(0) - opts.width) / 2
+    opts.row = (vim.api.nvim_win_get_height(0) - opts.height) / 2
+
+    return opts
+end
+
 ---@param buf integer?
 ---@return integer
 H.open_win = function(buf)
@@ -380,31 +411,9 @@ H.open_win = function(buf)
     H.render_buf(buf)
     H.render_highlights(buf)
 
-    local float = H.config.float
-    local opts = {
-        border = float.border,
-        relative = "win",
-        style = "minimal",
-        height = math.max(
-            math.min(float.max_height, vim.b[buf].chosen_height),
-            float.min_height
-        ),
-        width = math.max(
-            math.min(float.max_width, vim.b[buf].chosen_width),
-            float.min_width
-        ),
-        title = float.title,
-        title_pos = float.title_pos,
-    }
+    local win = vim.api.nvim_open_win(buf, true, H.win_config(buf))
 
-    opts.col = (vim.api.nvim_win_get_width(0) - opts.width) / 2
-    opts.row = (vim.api.nvim_win_get_height(0) - opts.height) / 2
-    opts.width = math.max(1, opts.width)
-    opts.height = math.max(1, opts.height)
-
-    local win = vim.api.nvim_open_win(buf, true, opts)
-
-    for opt, val in pairs(float.win_options) do
+    for opt, val in pairs(H.config.float.win_options) do
         vim.wo[win][opt] = val
     end
 
