@@ -1,0 +1,154 @@
+*chosen.txt*            For NVIM v0.8.0           Last change: 2025 January 25
+
+==============================================================================
+Table of Contents                                   *chosen-table-of-contents*
+
+1. Introduction                                          |chosen-introduction|
+2. Configuration                                        |chosen-configuration|
+3. Usage                                                        |chosen-usage|
+4. Api                                                            |chosen-api|
+5. Hightlights                                            |chosen-hightlights|
+6. Tips                                                          |chosen-tips|
+
+==============================================================================
+1. Introduction                                          *chosen-introduction*
+
+Chosen is a simple plugin to manage list of important files.
+
+This list is saved on filesystem, so it is persistent between different editing
+sessions.
+
+
+==============================================================================
+2. Configuration                                        *chosen-configuration*
+
+Default configuration options:
+
+>lua
+    require("chosen").setup({
+        -- Path where Chosen will store its data
+        store_path = vim.fn.stdpath("data") .. "/chosen",
+        -- Keys that will be used to manipulate Chosen files
+        keys = "123456789zxcbnmZXVBNMafghjklAFGHJKLwrtyuiopWRTYUIOP",
+        -- Disables autowrite of chosen index on VimLeavePre
+        autowrite = true,
+        -- Chosen ui options
+        ui_options = {
+            max_height = 10,
+            min_height = 1,
+            max_width = 40,
+            min_width = 10,
+            border = "rounded",
+            title = " Chosen ",
+            title_pos = "center",
+        },
+        -- Window local options to use in Chosen buffers
+        win_options = {
+            winhl = "NormalFloat:Normal,FloatBorder:Normal,FloatTitle:Title",
+        },
+        -- Buffer local options to use in Chosen buffers
+        buf_options = {
+            filetype = "chosen",
+        },
+        -- Mappings in Chosen buffers
+        keymap = {
+            -- Reset mode or exit
+            revert = "<Esc>",
+            -- Save current file
+            save = "c",
+            -- Toggle delete mode
+            delete = "d",
+            -- Toggle swap mode
+            swap = "s",
+        },
+    })
+<
+
+Configuration options should be intuitive enough to understand withoud further
+explanation.
+
+
+==============================================================================
+3. Usage                                                        *chosen-usage*
+
+Chosen aims to be very intuitive, so after setup simply call:
+
+>
+    :Chosen
+<
+
+In this window you can use specified in config mappings to toggle different
+modes. Try it yourself!
+
+You can also open window with using lua:
+
+>lua
+    require("chosen").toggle()
+<
+
+
+==============================================================================
+4. Api                                                            *chosen-api*
+
+Chosen uses index table to make its lists persistent. This file uses following
+structure:
+
+>lua
+    {
+        ["/path/to/dir"] = { "/path/to/file1", "/path/to/file2" },
+    }
+<
+
+You have few options to manage this file manually.
+
+To manually load index:
+
+>lua
+    -- require("chosen").config.store_path if nil passed to store_path
+    require("chosen").index = require("chosen").load_index(store_path)
+<
+
+To manually dump index:
+
+>lua
+    -- require("chosen").config.store_path if nil passed to store_path
+    -- require("chosen").index if nil passed to index
+    require("chosen").dump_index(store_path, index)
+<
+
+
+==============================================================================
+5. Hightlights                                            *chosen-hightlights*
+
+  -------------------------------------------------------------------------
+  Group          Default                              Description
+  -------------- ------------------------------------ ---------------------
+  ChosenIndex    { link = "DiagnosticOk"}             Key in default mode
+
+  ChosenDelete   { link = "DiagnosticError" }         Key in delete mode
+
+  ChosenSwap     { link = "DiagnosticWarning" }       Key in swap mode
+  -------------------------------------------------------------------------
+
+==============================================================================
+6. Tips                                                          *chosen-tips*
+
+To disable autowrite in runtime:
+
+>lua
+    :lua require("chosen").setup({ autowrite = false })
+<
+
+To make Chosen use default floating window hls:
+
+>lua
+    require("chosen").setup({
+        win_options = {
+            winhl = "",
+        },
+    })
+<
+
+Generated by panvimdoc <https://github.com/kdheepak/panvimdoc>
+
+vim:tw=78:ts=8:noet:ft=help:norl:
