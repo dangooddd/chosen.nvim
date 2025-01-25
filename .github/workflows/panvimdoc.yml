@@ -1,0 +1,37 @@
+name: panvimdoc
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - doc/chosen.md 
+      - .github/workflows/panvimdoc.yml 
+
+permissions:
+  contents: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    name: pandoc to vimdoc
+    steps:
+      - uses: actions/checkout@v2
+      - uses: kdheepak/panvimdoc@main
+        with:
+          vimdoc: chosen
+          version: "NVIM v0.8.0"
+          toc: true
+          description: ""
+          titledatepattern: "%Y %B %d"
+          demojify: false
+          dedupsubheadings: true
+          treesitter: true
+          ignorerawblocks: true
+          docmapping: false
+          docmappingprojectname: true
+          shiftheadinglevelby: 0
+          incrementheadinglevelby: 0
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "ci: auto generate vimdocs"
+          branch: ${{ github.head_ref }}
