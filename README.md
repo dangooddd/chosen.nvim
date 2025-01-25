@@ -6,8 +6,7 @@ https://github.com/user-attachments/assets/c50ec361-40d2-4a2b-b1c0-b7125b3d2136
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
-- [Options](#options)
-- [Usage](#usage)
+- [Config](#config)
 - [Alternatives](#alternatives)
 
 ## Requirements
@@ -58,7 +57,7 @@ return {
 }
 ```
 
-## Options
+## Config
 
 Config below is used by default, you do not need to pass it to setup:
 
@@ -102,49 +101,9 @@ require("chosen").setup({
 })
 ```
 
-You can also define Hightlight groups to modify Chosen ui:
-
-- ChosenIndex - default index hl
-- ChosenDelete - index hl in delete mode
-- ChosenSwap - index hl in swap mode
-
-## Usage
-
-After installation and quick start, you will be able to toggle chosen window.
-
-In chosen buffer you have only 4 actions:
-- Save current buffer to Chosen index (c by default)
-- Toggle delete mode (d by default)
-- Toggle swap mode (s by default)
-- Pick file with one key from config.keys
-
-In delete mode, key press will delete file from the list.
-
-In swap mode, you need to press two keys. After that, files will be swapped.
-
-By default, key press will open file.
-
-### Chosen data file (index)
-
-Chosen stores its data in format of lua table that called index.
-By default, this plugin will load this file on setup and save it on VimLeavePre event.
-
-To disable autowrite:
-
-```lua
-require("chosen").setup({ autowrite = false })
-```
-
-Also you can manage index dump manually:
-
-```lua
-local chosen = require("chosen")
-chosen.dump_index()
-```
-
 ## Alternatives
 
-- [mini.visits](https://github.com/echasnovski/mini.visits) - inspiration for index data file
-- [arrow](https://github.com/otavioschwanck/arrow.nvim.git) - inspiration for ui
-- [snipe](https://github.com/leath-dub/snipe.nvim) - general purpose targetted menu
-- [harpoon](https://github.com/ThePrimeagen/harpoon/tree/harpoon2) - most popular alternative
+- [mini.visits](https://github.com/echasnovski/mini.visits)
+- [arrow](https://github.com/otavioschwanck/arrow.nvim.git)
+- [snipe](https://github.com/leath-dub/snipe.nvim)
+- [harpoon](https://github.com/ThePrimeagen/harpoon/tree/harpoon2)
