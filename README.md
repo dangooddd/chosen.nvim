@@ -122,7 +122,7 @@ In delete mode, key press will delete file from the list.
 
 In swap mode, you need to press two keys. After that, files will be swapped.
 
-If none of modes is active, key press will open file.
+By default, key press will open file.
 
 ### Chosen data file (index)
 
@@ -135,11 +135,10 @@ To disable autowrite:
 require("chosen").setup({ autowrite = false })
 ```
 
-Also you can manage index load and save by yourself:
+Also you can manage index dump manually:
 
 ```lua
 local chosen = require("chosen")
-chosen.index = chosen.load_index()
 chosen.dump_index()
 ```
 
