@@ -19,6 +19,7 @@ jobs:
       - uses: kdheepak/panvimdoc@main
         with:
           vimdoc: chosen
+          pandoc: "doc/chosen.md"
           version: "NVIM v0.8.0"
           toc: true
           description: ""
