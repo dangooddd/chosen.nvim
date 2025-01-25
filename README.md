@@ -63,32 +63,35 @@ return {
 Config below is used by default, you do not need to pass it to setup:
 
 ```lua
-local default_config = {
+require("chosen").setup({
     -- Path where Chosen will store its data
     store_path = vim.fn.stdpath("data") .. "/chosen",
     -- Keys that will be used to manipulate Chosen files
-    index_keys = "123456789zxcbnmZXVBNMafghjklAFGHJKLwrtyuiopWRTYUIOP",
+    keys = "123456789zxcbnmZXVBNMafghjklAFGHJKLwrtyuiopWRTYUIOP",
     -- Disables autowrite of chosen index on VimLeavePre
-    -- Alternatively, you can toggle this with vim.g.chosen_disable_autorwrite
-    disable_autowrite = false,
-    -- Window specific options
-    -- Some will be passed in vim.api.nvim_open_win
-    float = {
+    autowrite = true,
+    -- Chosen ui options
+    ui_options = {
         max_height = 10,
         min_height = 1,
-        max_width = 20,
+        max_width = 40,
         min_width = 10,
         border = "rounded",
         title = " Chosen ",
         title_pos = "center",
-        -- Options to pass to vim.wo
-        win_options = {
-            -- Equivalent to set vim.wo.winhl
-            winhl = "NormalFloat:Normal,FloatBorder:Normal,FloatTitle:Title",
-        },
     },
-    -- Mappings in Chosen buffer
-    mappings = {
+    -- Window local options to use in Chosen buffers
+    win_options = {
+        winhl = "NormalFloat:Normal,FloatBorder:Normal,FloatTitle:Title",
+    },
+    -- Buffer local options to use in Chosen buffers
+    buf_options = {
+        filetype = "chosen",
+    },
+    -- Mappings in Chosen buffers
+    keymap = {
+        -- Reset mode or exit
+        revert = "<Esc>",
         -- Save current file
         save = "c",
         -- Toggle delete mode
@@ -96,7 +99,7 @@ local default_config = {
         -- Toggle swap mode
         swap = "s",
     },
-}
+})
 ```
 
 You can also define Hightlight groups to modify Chosen ui:
@@ -113,7 +116,7 @@ In chosen buffer you have only 4 actions:
 - Save current buffer to Chosen index (c by default)
 - Toggle delete mode (d by default)
 - Toggle swap mode (s by default)
-- Press key from index_keys variable in config
+- Pick file with one key from config.keys
 
 In delete mode, key press will delete file from the list.
 
@@ -126,10 +129,10 @@ If none of modes is active, key press will open file.
 Chosen stores its data in format of lua table that called index.
 By default, this plugin will load this file on setup and save it on VimLeavePre event.
 
-To disable autowrite only for current session:
+To disable autowrite:
 
 ```lua
-vim.g.chosen_disable_autorwrite = true
+require("chosen").setup({ autowrite = false })
 ```
 
 Also you can manage index load and save by yourself:

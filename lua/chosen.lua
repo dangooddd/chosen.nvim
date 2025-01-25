@@ -344,7 +344,7 @@ function H.render_highlights(buf)
         vim.api.nvim_buf_add_highlight(buf, -1, hl, i, 0, 2)
     end
 
-    -- set hl for message on empty buffer
+    -- set hl for message on empty menu
     if vim.b[buf].chosen_height == 0 then
         vim.api.nvim_buf_add_highlight(buf, -1, hl, 0, 0, -1)
     end
@@ -386,7 +386,7 @@ function H.render_buf(buf)
 
     vim.b[buf].chosen_height = #lines
 
-    -- message if buffer is empty
+    -- message on empty menu
     if #lines == 0 then
         lines[1] = string.format(" Press %s to save ", M.config.keymap.save)
         vim.b[buf].chosen_width = #lines[1]
