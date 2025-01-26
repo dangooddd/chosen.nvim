@@ -105,11 +105,12 @@ require("chosen").dump_index(store_path, index)
 
 | Group             | Default                          | Description
 | ----------------- | -------------------------------- | -----------------------------
-| ChosenKey         | `{ link = "DiagnosticInfo"}`     | Key in default mode 
+| ChosenKey         | `{ link = "Comment"}`            | Key in default mode 
 | ChosenDelete      | `{ link = "DiagnosticError" }`   | Key in delete mode
 | ChosenSwap        | `{ link = "DiagnosticWarning" }` | Key in swap mode
-| ChosenSplit       | `{ link = "Special" }`           | Key in split and vsplit modes
 | ChosenPlaceholder | `{ link = "DiagnosticHint" }`    | Placeholder on empty buffer    
+| ChosenSplit       | `{ link = "Special" }`           | Key in split and vsplit modes
+| ChosenCurrentFile | `{ link = "Type" }`              | Current file hightlights
 
 # Tips
 

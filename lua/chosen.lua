@@ -150,7 +150,7 @@ function M.setup(opts)
 
     -- highlights
     vim.api.nvim_set_hl(0, "ChosenKey", {
-        link = "DiagnosticInfo",
+        link = "Comment",
         default = true
     })
 
@@ -171,6 +171,11 @@ function M.setup(opts)
 
     vim.api.nvim_set_hl(0, "ChosenSplit", {
         link = "Special",
+        default = true
+    })
+
+    vim.api.nvim_set_hl(0, "ChosenCurrentFile", {
+        link = "Type",
         default = true
     })
 
@@ -428,6 +433,11 @@ function H.render_buf(buf)
 
         fname = vim.fn.fnamemodify(fname, ":~:.")
         lines[i] = fname
+
+        -- highlight current file
+        if vim.fn.fnamemodify(fname, ":p") == vim.b[buf].chosen_fname then
+            hls[#hls + 1] = { "ChosenCurrentFile", i - 1, 3, -1 }
+        end
 
         local icon_len = 1
         if M.config.ui_options.show_icons then
