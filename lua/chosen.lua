@@ -48,6 +48,16 @@ function H.set_tbl_default(tbl, val)
     setmetatable(tbl, { __index = function() return val end })
 end
 
+---Utility function to get ceil by absolute value of number
+---@param num number
+---@return number
+function H.abs_ceil(num)
+    if num < 0 then
+        return math.floor(num)
+    end
+    return math.ceil(num)
+end
+
 ---Get icon from webdevicons or mini.icons
 ---@param fname string
 ---@return string?, string?
@@ -505,7 +515,7 @@ end
 ---@param buf chosen.Buf
 ---@return chosen.Win
 function H.refresh_win(buf)
-   H.render_buf(buf)
+    H.render_buf(buf)
     local win = vim.fn.bufwinid(buf)
     if win ~= -1 then
         local pos = vim.api.nvim_win_get_position(win)
@@ -517,9 +527,8 @@ function H.refresh_win(buf)
         local width_diff = new_config.width - old_config.width
 
         -- Adjust position to keep window centered
-        new_config.row = math.max(0, pos[1] - math.ceil(height_diff / 2))
-        new_config.col = math.max(0, pos[2] - math.ceil(width_diff / 2))
-
+        new_config.row = math.max(0, pos[1] - H.abs_ceil(height_diff / 2))
+        new_config.col = math.max(0, pos[2] - H.abs_ceil(width_diff / 2))
 
         vim.api.nvim_win_set_config(win, new_config)
     end
@@ -558,4 +567,3 @@ end
 ---@alias chosen.Win integer
 
 return M
-
