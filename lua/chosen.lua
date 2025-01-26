@@ -38,6 +38,10 @@ M.config = {
         delete = "d",
         -- Toggle swap mode
         swap = "s",
+        -- Toggle split mode
+        split = "<C-s>",
+        -- Toggle vsplit mode
+        vsplit = "<C-v>",
     },
 }
 
@@ -155,6 +159,11 @@ function M.setup(opts)
         default = true
     })
 
+    vim.api.nvim_set_hl(0, "ChosenSplit", {
+        link = "Special",
+        default = true
+    })
+
     -- autocmds
     vim.api.nvim_create_augroup("Chosen", { clear = true })
 
@@ -247,6 +256,24 @@ function H.edit(fname)
     pcall(vim.cmd.edit, fname)
 end
 
+---Toggle chosen buffer mode
+---@param buf chosen.Buf?
+---@param pattern string Pattern to determine mode
+---@param value string? Value to place if pattern is not found
+function H.toggle_mode(buf, pattern, value)
+    buf = buf or vim.api.nvim_get_current_buf()
+    value = value or pattern
+
+    if string.find(vim.b[buf].chosen_mode or "", pattern) then
+        vim.b[buf].chosen_mode = ""
+    else
+        vim.b[buf].chosen_mode = value
+    end
+
+    -- re-render after mode changed
+    H.render_buf(buf)
+end
+
 ---Callbacks to call on buffer actions
 ---@type table<string, function>
 H.keymap_callbacks = {
@@ -268,30 +295,24 @@ H.keymap_callbacks = {
         H.open_win(buf)
     end,
 
-    ---Toggle delete mode
     ---@param buf chosen.Buf
     delete = function(buf)
-        if vim.b[buf].chosen_mode == "delete" then
-            vim.b[buf].chosen_mode = ""
-        else
-            vim.b[buf].chosen_mode = "delete"
-        end
-
-        H.render_buf(buf)
+        H.toggle_mode(buf, "delete")
     end,
 
-    ---Toggle swap mode
     ---@param buf chosen.Buf
     swap = function(buf)
-        if vim.b[buf].chosen_mode == "swap_first" or
-            vim.b[buf].chosen_mode == "swap_second"
-        then
-            vim.b[buf].chosen_mode = ""
-        else
-            vim.b[buf].chosen_mode = "swap_first"
-        end
+        H.toggle_mode(buf, "swap", "swap_first")
+    end,
 
-        H.render_buf(buf)
+    ---@param buf chosen.Buf
+    split = function(buf)
+        H.toggle_mode(buf, "split_horizontal")
+    end,
+
+    ---@param buf chosen.Buf
+    vsplit = function(buf)
+        H.toggle_mode(buf, "split_vertical")
     end,
 }
 
@@ -336,6 +357,22 @@ H.mode_actions = {
         -- re-render buffer
         H.render_buf(buf)
     end,
+
+    ---@param buf chosen.Buf
+    ---@param fname string
+    ["split_horizontal"] = function(buf, fname)
+        pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
+        vim.cmd.split()
+        H.edit(fname)
+    end,
+
+    ---@param buf chosen.Buf
+    ---@param fname string
+    ["split_vertical"] = function(buf, fname)
+        pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
+        vim.cmd.vsplit()
+        H.edit(fname)
+    end,
 }
 
 H.set_tbl_default(H.mode_actions, H.mode_actions[""])
@@ -346,6 +383,8 @@ H.mode_hls = {
     ["delete"] = "ChosenDelete",
     ["swap_first"] = "ChosenSwap",
     ["swap_second"] = "ChosenSwap",
+    ["split_horizontal"] = "ChosenSplit",
+    ["split_vertical"] = "ChosenSplit",
 }
 
 H.set_tbl_default(H.mode_hls, H.mode_hls[""])

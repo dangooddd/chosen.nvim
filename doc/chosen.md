@@ -11,8 +11,6 @@ Default configuration options:
 
 ```lua
 require("chosen").setup({
-```lua
-require("chosen").setup({
     -- Path where Chosen will store its data
     store_path = vim.fn.stdpath("data") .. "/chosen",
     -- Keys that will be used to manipulate Chosen files
@@ -48,6 +46,10 @@ require("chosen").setup({
         delete = "d",
         -- Toggle swap mode
         swap = "s",
+        -- Toggle split mode
+        split = "<C-s>",
+        -- Toggle vsplit mode
+        vsplit = "<C-v>",
     },
 })
 ```
@@ -102,10 +104,11 @@ require("chosen").dump_index(store_path, index)
 # Hightlights
 
 | Group             | Default                          | Description
-| ----------------- | -------------------------------- | ---------------------------
+| ----------------- | -------------------------------- | -----------------------------
 | ChosenKey         | `{ link = "DiagnosticInfo"}`     | Key in default mode 
 | ChosenDelete      | `{ link = "DiagnosticError" }`   | Key in delete mode
 | ChosenSwap        | `{ link = "DiagnosticWarning" }` | Key in swap mode
+| ChosenSplit       | `{ link = "Special" }`           | Key in split and vsplit modes
 | ChosenPlaceholder | `{ link = "DiagnosticHint" }`    | Placeholder on empty buffer    
 
 # Tips

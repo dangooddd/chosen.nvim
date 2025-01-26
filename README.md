@@ -100,6 +100,10 @@ require("chosen").setup({
         delete = "d",
         -- Toggle swap mode
         swap = "s",
+        -- Toggle split mode
+        split = "<C-s>",
+        -- Toggle vsplit mode
+        vsplit = "<C-v>",
     },
 })
 ```
