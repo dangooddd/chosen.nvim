@@ -493,12 +493,8 @@ function H.create_win_config(buf, is_refresh)
         title_pos = ui.title_pos,
     }
 
-    if is_refresh then
-        local win = vim.fn.bufwinid(buf)
-        local pos = vim.api.nvim_win_get_position(win)
-        opts.row = pos[1]
-        opts.col = pos[2]
-    else
+    if not is_refresh then
+        -- for the first time, center window relatively to current window
         opts.col = (vim.api.nvim_win_get_width(0) - opts.width) / 2
         opts.row = (vim.api.nvim_win_get_height(0) - opts.height) / 2
     end
@@ -512,7 +508,20 @@ function H.refresh_win(buf)
    H.render_buf(buf)
     local win = vim.fn.bufwinid(buf)
     if win ~= -1 then
-        vim.api.nvim_win_set_config(win, H.create_win_config(buf, true))
+        local pos = vim.api.nvim_win_get_position(win)
+        local old_config = vim.api.nvim_win_get_config(win)
+        local new_config = H.create_win_config(buf, true)
+
+        -- Calculate difference in sizes
+        local height_diff = new_config.height - old_config.height
+        local width_diff = new_config.width - old_config.width
+
+        -- Adjust position to keep window centered
+        new_config.row = math.max(0, pos[1] - math.ceil(height_diff / 2))
+        new_config.col = math.max(0, pos[2] - math.ceil(width_diff / 2))
+
+
+        vim.api.nvim_win_set_config(win, new_config)
     end
 
     return win
@@ -549,3 +558,4 @@ end
 ---@alias chosen.Win integer
 
 return M
+
