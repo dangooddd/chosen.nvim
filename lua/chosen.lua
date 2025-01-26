@@ -7,7 +7,7 @@ M.config = {
     store_path = vim.fn.stdpath("data") .. "/chosen",
     -- Keys that will be used to manipulate Chosen files
     keys = "123456789zxcbnmZXVBNMafghjklAFGHJKLwrtyuiopWRTYUIOP",
-    -- Disables autowrite of chosen index on VimLeavePre
+    -- Autowrite of chosen index on VimLeavePre event
     autowrite = true,
     -- Chosen ui options
     ui_options = {
@@ -18,6 +18,7 @@ M.config = {
         border = "rounded",
         title = " Chosen ",
         title_pos = "center",
+        show_icons = true,
     },
     -- Window local options to use in Chosen buffers
     win_options = {
@@ -45,6 +46,20 @@ M.config = {
 ---@param val any
 function H.set_tbl_default(tbl, val)
     setmetatable(tbl, { __index = function() return val end })
+end
+
+---Get icon from webdevicons or mini.icons
+---@param fname string
+---@return string?, string?
+function H.get_icon(fname)
+    -- get any provider
+    local ok, icons = pcall(require, "nvim-web-devicons")
+    if not ok then ok, icons = pcall(require, "mini.icons") end
+    if not ok then return nil end
+
+    fname = vim.fn.fnamemodify(fname, ":t")
+    local ext = vim.fn.fnamemodify(fname, ":e")
+    return icons.get_icon(fname, ext, { default = true })
 end
 
 ---Get cwd with resolved links
@@ -107,6 +122,7 @@ end
 ---@field border? "rounded"|"single"|"double"
 ---@field title? string
 ---@field title_pos? "left"|"center"|"right"
+---@field show_icons? boolean
 
 ---@class chosen.Keymap
 ---@field revert? string Mapping to reset mode (or exit in default mode)
@@ -119,8 +135,8 @@ function M.setup(opts)
     M.config = vim.tbl_deep_extend("force", M.config, opts or {})
 
     -- highlights
-    vim.api.nvim_set_hl(0, "ChosenIndex", {
-        link = "DiagnosticOk",
+    vim.api.nvim_set_hl(0, "ChosenKey", {
+        link = "DiagnosticInfo",
         default = true
     })
 
@@ -131,6 +147,11 @@ function M.setup(opts)
 
     vim.api.nvim_set_hl(0, "ChosenSwap", {
         link = "DiagnosticWarn",
+        default = true
+    })
+
+    vim.api.nvim_set_hl(0, "ChosenPlaceholder", {
+        link = "DiagnosticHint",
         default = true
     })
 
@@ -236,7 +257,7 @@ H.keymap_callbacks = {
             pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
         else
             vim.b[buf].chosen_mode = ""
-            H.render_highlights(buf)
+            H.render_buf(buf)
         end
     end,
 
@@ -256,7 +277,7 @@ H.keymap_callbacks = {
             vim.b[buf].chosen_mode = "delete"
         end
 
-        H.render_highlights(buf)
+        H.render_buf(buf)
     end,
 
     ---Toggle swap mode
@@ -270,7 +291,7 @@ H.keymap_callbacks = {
             vim.b[buf].chosen_mode = "swap_first"
         end
 
-        H.render_highlights(buf)
+        H.render_buf(buf)
     end,
 }
 
@@ -312,9 +333,8 @@ H.mode_actions = {
         vim.b[buf].chosen_swap = nil
         vim.b[buf].chosen_mode = ""
 
-        -- re-render only buffer
+        -- re-render buffer
         H.render_buf(buf)
-        H.render_highlights(buf)
     end,
 }
 
@@ -322,33 +342,13 @@ H.set_tbl_default(H.mode_actions, H.mode_actions[""])
 
 ---@type table<string, string>
 H.mode_hls = {
-    [""] = "ChosenIndex",
+    [""] = "ChosenKey",
     ["delete"] = "ChosenDelete",
     ["swap_first"] = "ChosenSwap",
     ["swap_second"] = "ChosenSwap",
 }
 
 H.set_tbl_default(H.mode_hls, H.mode_hls[""])
-
----@param buf chosen.Buf
-function H.render_highlights(buf)
-    vim.api.nvim_buf_clear_namespace(buf, -1, 0, -1)
-
-    ---@type integer
-    vim.b[buf].chosen_height = vim.b[buf].chosen_height or 0 -- ensure value exist
-
-    local hl = H.mode_hls[vim.b[buf].chosen_mode]
-
-    -- set hl based on current Chosen mode
-    for i = 0, vim.b[buf].chosen_height - 1 do
-        vim.api.nvim_buf_add_highlight(buf, -1, hl, i, 0, 2)
-    end
-
-    -- set hl for message on empty menu
-    if vim.b[buf].chosen_height == 0 then
-        vim.api.nvim_buf_add_highlight(buf, -1, hl, 0, 0, -1)
-    end
-end
 
 ---@param buf chosen.Buf?
 function H.render_buf(buf)
@@ -357,9 +357,14 @@ function H.render_buf(buf)
     vim.bo[buf].modifiable = true -- by default chosen buffer is not modifiable
     vim.b[buf].chosen_width = 1   -- for width update on repeated rendering
 
-    local cwd = uv.cwd()
+    -- clear hls
+    vim.api.nvim_buf_clear_namespace(buf, -1, 0, -1)
+
+    local cwd = H.get_resolved_cwd()
     local keys = M.config.keys
+    local mode_hl = H.mode_hls[vim.b[buf].chosen_mode]
     local lines = {}
+    local hls = {}
 
     local keymap_opts = {
         buffer = buf,
@@ -370,13 +375,29 @@ function H.render_buf(buf)
     for i, fname in ipairs(M.index[cwd] or {}) do
         -- do not render more than index_keys can handle
         if i > #keys then break end
-
         local key = keys:sub(i, i)
+
         fname = vim.fn.fnamemodify(fname, ":~:.")
-        lines[i] = string.format(" %s %s ", key, fname)
+        lines[i] = fname
+
+        local icon_len = 1
+        if M.config.ui_options.show_icons then
+            local icon, icon_hl = H.get_icon(fname)
+            if icon then
+                lines[i] = string.format("%s %s", icon, lines[i])
+                icon_len = #icon
+                hls[#hls + 1] = { icon_hl, i - 1, 3, 4 }
+            end
+        end
+
+        lines[i] = string.format(" %s %s ", key, lines[i])
+
+        -- key hightlights
+        hls[#hls + 1] = { mode_hl, i - 1, 0, 2 }
 
         -- calculate max width of a line
-        vim.b[buf].chosen_width = math.max(vim.b[buf].chosen_width, #lines[i])
+        -- because lua length is in bytes, we should correct width when icon showing
+        vim.b[buf].chosen_width = math.max(vim.b[buf].chosen_width, #lines[i] - icon_len + 1)
 
         -- keybinds
         vim.keymap.set("n", key, function()
@@ -389,12 +410,20 @@ function H.render_buf(buf)
     -- message on empty menu
     if #lines == 0 then
         lines[1] = string.format(" Press %s to save ", M.config.keymap.save)
+        -- placeholder highlights
+        table.insert(hls, { "ChosenPlaceholder", 0, 0, -1 })
         vim.b[buf].chosen_width = #lines[1]
     end
 
+    -- place text
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+
+    -- place hls
+    for _, hl_param in ipairs(hls) do
+        vim.api.nvim_buf_add_highlight(buf, -1, unpack(hl_param))
+    end
+
     vim.bo[buf].modifiable = false -- reset modifiable
-    H.render_highlights(buf)
 end
 
 ---@param fname string?
@@ -478,7 +507,6 @@ function H.open_win(buf)
     pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
 
     H.render_buf(buf)
-    H.render_highlights(buf)
 
     local win = vim.api.nvim_open_win(buf, true, H.create_win_config(buf))
 

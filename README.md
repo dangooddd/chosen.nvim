@@ -48,6 +48,8 @@ Full example for lazy:
 -- plugins/chosen.lua
 return {
     "dangooddd/chosen.nvim",
+    dependencies = { "nvim-tree/nvim-web-devicons" }, -- optional
+    -- dependencies = { "echasnovski/mini.icons" }
     keys = { "<Enter>" },
     cmd = "Chosen"
     config = function()
@@ -67,7 +69,7 @@ require("chosen").setup({
     store_path = vim.fn.stdpath("data") .. "/chosen",
     -- Keys that will be used to manipulate Chosen files
     keys = "123456789zxcbnmZXVBNMafghjklAFGHJKLwrtyuiopWRTYUIOP",
-    -- Disables autowrite of chosen index on VimLeavePre
+    -- Autowrite of chosen index on VimLeavePre event
     autowrite = true,
     -- Chosen ui options
     ui_options = {
@@ -78,6 +80,7 @@ require("chosen").setup({
         border = "rounded",
         title = " Chosen ",
         title_pos = "center",
+        show_icons = true,
     },
     -- Window local options to use in Chosen buffers
     win_options = {

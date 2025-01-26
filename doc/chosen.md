@@ -11,11 +11,13 @@ Default configuration options:
 
 ```lua
 require("chosen").setup({
+```lua
+require("chosen").setup({
     -- Path where Chosen will store its data
     store_path = vim.fn.stdpath("data") .. "/chosen",
     -- Keys that will be used to manipulate Chosen files
     keys = "123456789zxcbnmZXVBNMafghjklAFGHJKLwrtyuiopWRTYUIOP",
-    -- Disables autowrite of chosen index on VimLeavePre
+    -- Autowrite of chosen index on VimLeavePre event
     autowrite = true,
     -- Chosen ui options
     ui_options = {
@@ -26,6 +28,7 @@ require("chosen").setup({
         border = "rounded",
         title = " Chosen ",
         title_pos = "center",
+        show_icons = true,
     },
     -- Window local options to use in Chosen buffers
     win_options = {
@@ -98,11 +101,12 @@ require("chosen").dump_index(store_path, index)
 
 # Hightlights
 
-| Group        | Default                          | Description
-| ------------ | -------------------------------- | -------------------
-| ChosenIndex  | `{ link = "DiagnosticOk"}`       | Key in default mode 
-| ChosenDelete | `{ link = "DiagnosticError" }`   | Key in delete mode
-| ChosenSwap   | `{ link = "DiagnosticWarning" }` | Key in swap mode
+| Group             | Default                          | Description
+| ----------------- | -------------------------------- | ---------------------------
+| ChosenKey         | `{ link = "DiagnosticInfo"}`     | Key in default mode 
+| ChosenDelete      | `{ link = "DiagnosticError" }`   | Key in delete mode
+| ChosenSwap        | `{ link = "DiagnosticWarning" }` | Key in swap mode
+| ChosenPlaceholder | `{ link = "DiagnosticHint" }`    | Placeholder on empty buffer    
 
 # Tips
 
@@ -112,7 +116,7 @@ To disable autowrite in runtime:
 :lua require("chosen").setup({ autowrite = false })
 ```
 
-To make Chosen use default floating window hls:
+To make Chosen use default floating window hightlights:
 
 ```lua
 require("chosen").setup({
