@@ -52,16 +52,6 @@ function H.set_tbl_default(tbl, val)
     setmetatable(tbl, { __index = function() return val end })
 end
 
----Utility function to get ceil by absolute value of number
----@param num number
----@return number
-function H.abs_ceil(num)
-    if num < 0 then
-        return math.floor(num)
-    end
-    return math.ceil(num)
-end
-
 ---Get icon from webdevicons or mini.icons
 ---@param fname string
 ---@return string?, string?
@@ -530,13 +520,14 @@ end
 
 ---Create window config for given Chosen buffer
 ---@param buf chosen.Buf
----@param is_refresh boolean
+---@param relative_win integer?
 ---@return vim.api.keyset.win_config
-function H.create_win_config(buf, is_refresh)
+function H.create_win_config(buf, relative_win)
     local ui = M.config.ui_options
     local opts = {
         border = ui.border,
-        relative = is_refresh and "editor" or "win",
+        relative = "win",
+        win = relative_win or vim.api.nvim_get_current_win(),
         style = "minimal",
         col = 0,
         row = 0,
@@ -554,11 +545,8 @@ function H.create_win_config(buf, is_refresh)
         title_pos = ui.title_pos,
     }
 
-    if not is_refresh then
-        -- for the first time, center window relatively to current window
-        opts.col = (vim.api.nvim_win_get_width(0) - opts.width) / 2
-        opts.row = (vim.api.nvim_win_get_height(0) - opts.height) / 2
-    end
+    opts.col = math.max(0, (vim.api.nvim_win_get_width(opts.win) - opts.width) / 2)
+    opts.row = math.max(0, (vim.api.nvim_win_get_height(opts.win) - opts.height) / 2)
 
     return opts
 end
@@ -571,17 +559,9 @@ function H.refresh_win(buf)
 
     H.render_buf(buf)
 
-    local pos = vim.api.nvim_win_get_position(win)
+    -- on refresh, keep relative window
     local old_config = vim.api.nvim_win_get_config(win)
-    local new_config = H.create_win_config(buf, true)
-
-    -- calculate difference in sizes
-    local height_diff = new_config.height - old_config.height
-    local width_diff = new_config.width - old_config.width
-
-    -- adjust position to keep window centered
-    new_config.row = math.max(0, pos[1] - H.abs_ceil(height_diff / 2))
-    new_config.col = math.max(0, pos[2] - H.abs_ceil(width_diff / 2))
+    local new_config = H.create_win_config(buf, old_config.win)
 
     vim.api.nvim_win_set_config(win, new_config)
 
@@ -596,7 +576,7 @@ function H.open_win(buf)
 
     H.render_buf(buf)
 
-    local win = vim.api.nvim_open_win(buf, true, H.create_win_config(buf, false))
+    local win = vim.api.nvim_open_win(buf, true, H.create_win_config(buf))
 
     for opt, val in pairs(M.config.win_options) do
         vim.wo[win][opt] = val
