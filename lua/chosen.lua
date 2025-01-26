@@ -235,7 +235,10 @@ end
 ---@param fname string
 function H.save_to_index(cwd, fname)
     cwd = cwd or H.get_resolved_cwd()
-    if not cwd then return end              -- ensure that cwd is not nil
+    -- ensure that cwd is not nil
+    if not cwd then return end
+    -- ensure that filename not empty
+    if vim.fn.fnamemodify(fname, ":t") == "" then return end
 
     fname = vim.fn.fnamemodify(fname, ":p") -- use only absolute path to prevent issues
     M.index[cwd] = M.index[cwd] or {}       -- ensure that index entry exist
