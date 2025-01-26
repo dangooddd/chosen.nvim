@@ -156,7 +156,7 @@ function M.setup(opts)
     })
 
     -- autocmds
-    vim.api.nvim_create_augroup("Chosen", { clear = false })
+    vim.api.nvim_create_augroup("Chosen", { clear = true })
 
     -- dump index on leave of editor
     vim.api.nvim_create_autocmd("VimLeavePre", {
@@ -173,7 +173,7 @@ function M.setup(opts)
     vim.api.nvim_create_user_command("Chosen", M.toggle, {})
 
     -- load index on setup
-    M.index = M.load_index()
+    if next(M.index) == nil then M.index = M.load_index() end
 end
 
 ---Delete file from index entry for given cwd
