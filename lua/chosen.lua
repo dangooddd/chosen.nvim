@@ -270,11 +270,10 @@ function H.edit(fname)
 end
 
 ---Toggle chosen buffer mode
----@param buf chosen.Buf?
+---@param buf chosen.Buf
 ---@param pattern string Pattern to determine mode
 ---@param value string? Value to place if pattern is not found
 function H.toggle_mode(buf, pattern, value)
-    buf = buf or vim.api.nvim_get_current_buf()
     value = value or pattern
 
     if string.find(vim.b[buf].chosen_mode or "", pattern) then
@@ -402,10 +401,8 @@ H.mode_hls = {
 
 H.set_tbl_default(H.mode_hls, H.mode_hls[""])
 
----@param buf chosen.Buf?
+---@param buf chosen.Buf
 function H.render_buf(buf)
-    ---@type chosen.Buf
-    buf = buf or vim.api.nvim_get_current_buf()
     vim.bo[buf].modifiable = true -- by default chosen buffer is not modifiable
     vim.b[buf].chosen_width = 1   -- for width update on repeated rendering
 
@@ -531,6 +528,8 @@ function H.create_win_config(buf, is_refresh)
         border = ui.border,
         relative = is_refresh and "editor" or "win",
         style = "minimal",
+        col = 0,
+        row = 0,
         height = math.max(
             math.min(ui.max_height, vim.b[buf].chosen_height or 0),
             ui.min_height,
@@ -579,10 +578,9 @@ function H.refresh_win(buf)
     return win
 end
 
----@param buf chosen.Buf?
+---@param buf chosen.Buf
 ---@return chosen.Win
 function H.open_win(buf)
-    buf = buf or H.create_buf()
     -- close existing window
     pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
 
