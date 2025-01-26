@@ -265,7 +265,7 @@ H.keymap_callbacks = {
     ---@param buf chosen.Buf
     save = function(buf)
         H.save_to_index(nil, vim.b[buf].chosen_fname)
-        H.open_win(buf)
+        H.refresh_win(buf)
     end,
 
     ---Toggle delete mode
@@ -314,7 +314,7 @@ H.mode_actions = {
         vim.b[buf].chosen_mode = ""
 
         -- re-render window because number of files is probably changed
-        H.open_win(buf)
+        H.refresh_win(buf)
     end,
 
     ---Enter second stage of swapping
@@ -471,32 +471,51 @@ end
 
 ---Create window config for given Chosen buffer
 ---@param buf chosen.Buf
+---@param is_refresh boolean
 ---@return vim.api.keyset.win_config
-function H.create_win_config(buf)
+function H.create_win_config(buf, is_refresh)
     local ui = M.config.ui_options
-
     local opts = {
         border = ui.border,
-        relative = "win",
+        relative = is_refresh and "editor" or "win",
         style = "minimal",
         height = math.max(
             math.min(ui.max_height, vim.b[buf].chosen_height or 0),
             ui.min_height,
-            1 -- if value in config lesser than 1
+            1
         ),
         width = math.max(
             math.min(ui.max_width, vim.b[buf].chosen_width or 0),
             ui.min_width,
-            1 -- if value in config lesser than 1
+            1
         ),
         title = ui.title,
         title_pos = ui.title_pos,
     }
 
-    opts.col = (vim.api.nvim_win_get_width(0) - opts.width) / 2
-    opts.row = (vim.api.nvim_win_get_height(0) - opts.height) / 2
+    if is_refresh then
+        local win = vim.fn.bufwinid(buf)
+        local pos = vim.api.nvim_win_get_position(win)
+        opts.row = pos[1]
+        opts.col = pos[2]
+    else
+        opts.col = (vim.api.nvim_win_get_width(0) - opts.width) / 2
+        opts.row = (vim.api.nvim_win_get_height(0) - opts.height) / 2
+    end
 
     return opts
+end
+
+---@param buf chosen.Buf
+---@return chosen.Win
+function H.refresh_win(buf)
+   H.render_buf(buf)
+    local win = vim.fn.bufwinid(buf)
+    if win ~= -1 then
+        vim.api.nvim_win_set_config(win, H.create_win_config(buf, true))
+    end
+
+    return win
 end
 
 ---@param buf chosen.Buf?
@@ -508,7 +527,7 @@ function H.open_win(buf)
 
     H.render_buf(buf)
 
-    local win = vim.api.nvim_open_win(buf, true, H.create_win_config(buf))
+    local win = vim.api.nvim_open_win(buf, true, H.create_win_config(buf, false))
 
     for opt, val in pairs(M.config.win_options) do
         vim.wo[win][opt] = val
