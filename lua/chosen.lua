@@ -515,23 +515,24 @@ end
 ---@param buf chosen.Buf
 ---@return chosen.Win
 function H.refresh_win(buf)
-    H.render_buf(buf)
     local win = vim.fn.bufwinid(buf)
-    if win ~= -1 then
-        local pos = vim.api.nvim_win_get_position(win)
-        local old_config = vim.api.nvim_win_get_config(win)
-        local new_config = H.create_win_config(buf, true)
+    if win == -1 then return win end
 
-        -- Calculate difference in sizes
-        local height_diff = new_config.height - old_config.height
-        local width_diff = new_config.width - old_config.width
+    H.render_buf(buf)
 
-        -- Adjust position to keep window centered
-        new_config.row = math.max(0, pos[1] - H.abs_ceil(height_diff / 2))
-        new_config.col = math.max(0, pos[2] - H.abs_ceil(width_diff / 2))
+    local pos = vim.api.nvim_win_get_position(win)
+    local old_config = vim.api.nvim_win_get_config(win)
+    local new_config = H.create_win_config(buf, true)
 
-        vim.api.nvim_win_set_config(win, new_config)
-    end
+    -- calculate difference in sizes
+    local height_diff = new_config.height - old_config.height
+    local width_diff = new_config.width - old_config.width
+
+    -- adjust position to keep window centered
+    new_config.row = math.max(0, pos[1] - H.abs_ceil(height_diff / 2))
+    new_config.col = math.max(0, pos[2] - H.abs_ceil(width_diff / 2))
+
+    vim.api.nvim_win_set_config(win, new_config)
 
     return win
 end
