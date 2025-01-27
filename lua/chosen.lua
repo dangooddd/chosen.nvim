@@ -506,12 +506,15 @@ function H.create_buf(fname)
     end
 
     -- auto close window when focus changes
-    vim.api.nvim_create_autocmd("BufLeave", {
+    vim.api.nvim_create_autocmd("WinLeave", {
         group = "Chosen",
         buffer = buf,
-        callback = function()
+        -- use schedule_wrap to prevent instant close
+        -- of other floating windows
+        callback = vim.schedule_wrap(function()
+            if vim.fn.win_gettype() == "command" then return end
             pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
-        end,
+        end),
     })
 
     H.render_buf(buf)
