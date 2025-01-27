@@ -9,6 +9,10 @@ M.config = {
     keys = "123456789zxcbnmZXVBNMafghjklAFGHJKLwrtyuiopWRTYUIOP",
     -- Autowrite of chosen index on VimLeavePre event
     autowrite = true,
+    -- Change behaviour of hjkl keys in Chosen buffers
+    -- h and l -- horizontal scroll
+    -- j and k -- PageUp / PageDown
+    bind_hjkl = true,
     -- Chosen ui options
     ui_options = {
         max_height = 10,
@@ -113,6 +117,7 @@ end
 ---@field store_path? string File where Chosen data file (index) will be stored
 ---@field keys? string Keys that will be used to pick files
 ---@field autowrite? boolean Autowrite Chosen index file on exit
+---@field bind_hjkl? boolean Change behaviour of hjkl keys in Chosen buffers
 ---@field ui_options? chosen.UIOpts
 ---@field win_options? table<string, any> Window local options in Chosen buffers
 ---@field buf_options? table<string, any> Buffer local options in Chosen buffers
@@ -133,41 +138,21 @@ end
 ---@field save? string Mapping to add current file to Chosen index
 ---@field delete? string Mapping to toggle delete mode
 ---@field swap? string Mapping to toggle swap mode
+---@field split? string Mapping to toggle split mode
+---@field vsplit? string Mapping to toggle vsplit mode
 
 ---@param opts chosen.SetupOpts?
 function M.setup(opts)
     M.config = vim.tbl_deep_extend("force", M.config, opts or {})
 
     -- highlights
-    vim.api.nvim_set_hl(0, "ChosenKey", {
-        link = "Comment",
-        default = true
-    })
-
-    vim.api.nvim_set_hl(0, "ChosenDelete", {
-        link = "DiagnosticError",
-        default = true
-    })
-
-    vim.api.nvim_set_hl(0, "ChosenSwap", {
-        link = "DiagnosticWarn",
-        default = true
-    })
-
-    vim.api.nvim_set_hl(0, "ChosenPlaceholder", {
-        link = "DiagnosticHint",
-        default = true
-    })
-
-    vim.api.nvim_set_hl(0, "ChosenSplit", {
-        link = "Special",
-        default = true
-    })
-
-    vim.api.nvim_set_hl(0, "ChosenCurrentFile", {
-        link = "Type",
-        default = true
-    })
+    vim.api.nvim_set_hl(0, "ChosenKey", { link = "Comment", default = true })
+    vim.api.nvim_set_hl(0, "ChosenDelete", { link = "DiagnosticError", default = true })
+    vim.api.nvim_set_hl(0, "ChosenSwap", { link = "DiagnosticWarn", default = true })
+    vim.api.nvim_set_hl(0, "ChosenPlaceholder", { link = "DiagnosticHint", default = true })
+    vim.api.nvim_set_hl(0, "ChosenSplit", { link = "Special", default = true })
+    vim.api.nvim_set_hl(0, "ChosenCurrentFile", { link = "Type", default = true })
+    vim.api.nvim_set_hl(0, "ChosenCursor", { nocombine = true, blend = 100, default = true })
 
     -- autocmds
     vim.api.nvim_create_augroup("Chosen", { clear = true })
@@ -499,20 +484,33 @@ function H.create_buf(fname)
 
     vim.keymap.set("n", "q", "<cmd>q<CR>", keymap_opts)
 
+    if M.config.bind_hjkl then
+        vim.keymap.set("n", "j", "<PageDown>", keymap_opts)
+        vim.keymap.set("n", "k", "<PageUp>", keymap_opts)
+        vim.keymap.set("n", "h", "z<Left>", keymap_opts)
+        vim.keymap.set("n", "l", "z<Right>", keymap_opts)
+    end
+
     for name, mapping in pairs(M.config.keymap) do
         vim.keymap.set("n", mapping, function()
             H.keymap_callbacks[name](buf)
         end, keymap_opts)
     end
 
+    -- set custom cursor
+    vim.opt.guicursor:append("n:ChosenCursor/ChosenCursor")
+
     -- auto close window when focus changes
-    vim.api.nvim_create_autocmd("WinLeave", {
+    vim.api.nvim_create_autocmd({ "WinLeave", "BufLeave", "CmdlineEnter" }, {
         group = "Chosen",
         buffer = buf,
         -- use schedule_wrap to prevent instant close
-        -- of other floating windows
+        -- of other floating windows or other issues
         callback = vim.schedule_wrap(function()
-            if vim.fn.win_gettype() == "command" then return end
+            -- reset cursor
+            vim.opt.guicursor:remove("n:ChosenCursor/ChosenCursor")
+
+            -- autoclose on leave
             pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
         end),
     })

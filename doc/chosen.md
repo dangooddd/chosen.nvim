@@ -17,6 +17,10 @@ require("chosen").setup({
     keys = "123456789zxcbnmZXVBNMafghjklAFGHJKLwrtyuiopWRTYUIOP",
     -- Autowrite of chosen index on VimLeavePre event
     autowrite = true,
+    -- Change behaviour of hjkl keys in Chosen buffers
+    -- h and l -- horizontal scroll
+    -- j and k -- PageUp / PageDown
+    bind_hjkl = true,
     -- Chosen ui options
     ui_options = {
         max_height = 10,
@@ -103,14 +107,15 @@ require("chosen").dump_index(store_path, index)
 
 # Hightlights
 
-| Group             | Default                          | Description
-| ----------------- | -------------------------------- | -----------------------------
-| ChosenKey         | `{ link = "Comment"}`            | Key in default mode 
-| ChosenDelete      | `{ link = "DiagnosticError" }`   | Key in delete mode
-| ChosenSwap        | `{ link = "DiagnosticWarning" }` | Key in swap mode
-| ChosenPlaceholder | `{ link = "DiagnosticHint" }`    | Placeholder on empty buffer    
-| ChosenSplit       | `{ link = "Special" }`           | Key in split and vsplit modes
-| ChosenCurrentFile | `{ link = "Type" }`              | Current file hightlights
+| Group             | Default                            | Description
+| ----------------- | ---------------------------------- | -----------------------------
+| ChosenKey         | `{ link = "Comment"}`              | Key in default mode 
+| ChosenDelete      | `{ link = "DiagnosticError" }`     | Key in delete mode
+| ChosenSwap        | `{ link = "DiagnosticWarning" }`   | Key in swap mode
+| ChosenPlaceholder | `{ link = "DiagnosticHint" }`      | Placeholder on empty buffer    
+| ChosenSplit       | `{ link = "Special" }`             | Key in split and vsplit modes
+| ChosenCurrentFile | `{ link = "Type" }`                | Current file hightlights
+| ChosenCursor      | `{ nocombine = true, blend = 100}` | Cursor in Chosen buffers
 
 # Tips
 
@@ -128,4 +133,9 @@ require("chosen").setup({
         winhl = "",
     },
 })
+```
+
+If you have issues because of cursor change:
+```lua
+vim.api.nvim_set_hl(0, "ChosenCursor", { link = "Cursor" })
 ```

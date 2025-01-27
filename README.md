@@ -71,6 +71,10 @@ require("chosen").setup({
     keys = "123456789zxcbnmZXVBNMafghjklAFGHJKLwrtyuiopWRTYUIOP",
     -- Autowrite of chosen index on VimLeavePre event
     autowrite = true,
+    -- Change behaviour of hjkl keys in Chosen buffers
+    -- h and l -- horizontal scroll
+    -- j and k -- PageUp / PageDown
+    bind_hjkl = true,
     -- Chosen ui options
     ui_options = {
         max_height = 10,
