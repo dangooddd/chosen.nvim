@@ -120,6 +120,7 @@ end
 ---@field keys? string Keys that will be used to pick files
 ---@field autowrite? boolean Autowrite Chosen index file on exit
 ---@field bind_hjkl? boolean Change behaviour of hjkl keys in Chosen buffers
+---@field exit_on_save? boolean Exit on save / delete of current file
 ---@field ui_options? chosen.UIOpts
 ---@field win_options? table<string, any> Window local options in Chosen buffers
 ---@field buf_options? table<string, any> Buffer local options in Chosen buffers
