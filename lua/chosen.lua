@@ -174,7 +174,10 @@ function M.setup(opts)
     vim.api.nvim_create_user_command("Chosen", M.toggle, {})
 
     -- load index on setup
-    if next(M.index) == nil then M.index = M.load_index() end
+    if not H.index_loaded then
+        H.index_loaded = true
+        M.index = M.load_index()
+    end
 end
 
 ---Delete file from index entry for given cwd
