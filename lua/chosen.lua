@@ -13,6 +13,8 @@ M.config = {
     -- h and l -- horizontal scroll
     -- j and k -- PageUp / PageDown
     bind_hjkl = true,
+    -- Exit on save / delete of current file
+    exit_on_save = false,
     -- Chosen ui options
     ui_options = {
         max_height = 10,
@@ -36,7 +38,7 @@ M.config = {
     keymap = {
         -- Reset mode or exit
         revert = "<Esc>",
-        -- Save current file
+        -- Save / delete current file
         save = "c",
         -- Toggle delete mode
         delete = "d",
@@ -150,8 +152,8 @@ function M.setup(opts)
     vim.api.nvim_set_hl(0, "ChosenDelete", { link = "DiagnosticError", default = true })
     vim.api.nvim_set_hl(0, "ChosenSwap", { link = "DiagnosticWarn", default = true })
     vim.api.nvim_set_hl(0, "ChosenPlaceholder", { link = "DiagnosticHint", default = true })
-    vim.api.nvim_set_hl(0, "ChosenSplit", { link = "Special", default = true })
-    vim.api.nvim_set_hl(0, "ChosenCurrentFile", { link = "Type", default = true })
+    vim.api.nvim_set_hl(0, "ChosenSplit", { link = "DiagnosticInfo", default = true })
+    vim.api.nvim_set_hl(0, "ChosenCurrentFile", { link = "Special", default = true })
     vim.api.nvim_set_hl(0, "ChosenCursor", { nocombine = true, blend = 100, default = true })
 
     -- autocmds
@@ -176,23 +178,24 @@ function M.setup(opts)
 end
 
 ---Delete file from index entry for given cwd
+---Returns true if found and deleted
 ---@param cwd string?
 ---@param fname string File name to delete
+---@return boolean?
 function H.delete_from_index(cwd, fname)
     cwd = cwd or H.get_resolved_cwd()
     if not cwd or not M.index[cwd] then return end
 
     fname = vim.fn.fnamemodify(fname, ":p")
 
-    for i, file in ipairs(M.index[cwd] or {}) do
+    for i, file in ipairs(M.index[cwd]) do
         if file == fname then
             table.remove(M.index[cwd], i)
-            break
+            if #M.index[cwd] == 0 then
+                M.index[cwd] = nil
+            end
+            return true
         end
-    end
-
-    if #M.index[cwd] == 0 then
-        M.index[cwd] = nil
     end
 end
 
@@ -269,7 +272,7 @@ end
 ---Callbacks to call on buffer actions
 ---@type table<string, function>
 H.keymap_callbacks = {
-    ---Clear swap|delete mode or close window
+    ---Clear mode or close window
     ---@param buf chosen.Buf
     revert = function(buf)
         if vim.b[buf].chosen_mode == "" then
@@ -280,11 +283,19 @@ H.keymap_callbacks = {
         end
     end,
 
-    ---Save current buffer and re-render window
+    ---Save current file to index
+    ---If already saved, delete it
     ---@param buf chosen.Buf
     save = function(buf)
-        H.save_to_index(nil, vim.b[buf].chosen_fname)
-        H.refresh_win(buf)
+        if not H.delete_from_index(nil, vim.b[buf].chosen_fname) then
+            H.save_to_index(nil, vim.b[buf].chosen_fname)
+        end
+
+        if M.config.exit_on_save then
+            pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
+        else
+            H.refresh_win(buf)
+        end
     end,
 
     ---@param buf chosen.Buf

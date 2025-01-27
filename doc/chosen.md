@@ -21,6 +21,8 @@ require("chosen").setup({
     -- h and l -- horizontal scroll
     -- j and k -- PageUp / PageDown
     bind_hjkl = true,
+    -- Exit on save / delete of current file
+    exit_on_save = false,
     -- Chosen ui options
     ui_options = {
         max_height = 10,
@@ -44,7 +46,7 @@ require("chosen").setup({
     keymap = {
         -- Reset mode or exit
         revert = "<Esc>",
-        -- Save current file
+        -- Save / delete current file
         save = "c",
         -- Toggle delete mode
         delete = "d",
@@ -113,8 +115,8 @@ require("chosen").dump_index(store_path, index)
 | ChosenDelete      | `{ link = "DiagnosticError" }`     | Key in delete mode
 | ChosenSwap        | `{ link = "DiagnosticWarning" }`   | Key in swap mode
 | ChosenPlaceholder | `{ link = "DiagnosticHint" }`      | Placeholder on empty buffer    
-| ChosenSplit       | `{ link = "Special" }`             | Key in split and vsplit modes
-| ChosenCurrentFile | `{ link = "Type" }`                | Current file hightlights
+| ChosenSplit       | `{ link = "DiagnosticInfo" }`      | Key in split and vsplit modes
+| ChosenCurrentFile | `{ link = "Special" }`             | Current file hightlights
 | ChosenCursor      | `{ nocombine = true, blend = 100}` | Cursor in Chosen buffers
 
 # Tips
@@ -135,7 +137,7 @@ require("chosen").setup({
 })
 ```
 
-If you have issues because of cursor change:
+If you have issues because of cursor changes:
 ```lua
 vim.api.nvim_set_hl(0, "ChosenCursor", { link = "Cursor" })
 ```

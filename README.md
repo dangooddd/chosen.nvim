@@ -75,6 +75,8 @@ require("chosen").setup({
     -- h and l -- horizontal scroll
     -- j and k -- PageUp / PageDown
     bind_hjkl = true,
+    -- Exit on save / delete of current file
+    exit_on_save = false,
     -- Chosen ui options
     ui_options = {
         max_height = 10,
@@ -98,7 +100,7 @@ require("chosen").setup({
     keymap = {
         -- Reset mode or exit
         revert = "<Esc>",
-        -- Save current file
+        -- Save / delete current file
         save = "c",
         -- Toggle delete mode
         delete = "d",
