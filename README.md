@@ -1,7 +1,7 @@
 # chosen.nvim
 Quickly move between your chosen files, per-project.
 
-https://github.com/user-attachments/assets/c50ec361-40d2-4a2b-b1c0-b7125b3d2136
+https://github.com/user-attachments/assets/58c5168e-ea43-4f11-9abc-8b7b94091009
 
 - [Requirements](#requirements)
 - [Installation](#installation)
