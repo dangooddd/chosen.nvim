@@ -504,6 +504,7 @@ function H.create_buf(fname)
     vim.api.nvim_create_autocmd({ "WinLeave", "BufLeave", "CmdlineEnter" }, {
         group = "Chosen",
         buffer = buf,
+        once = true,
         -- use schedule_wrap to prevent instant close
         -- of other floating windows or other issues
         callback = vim.schedule_wrap(function()
@@ -530,8 +531,6 @@ function H.create_win_config(buf, relative_win)
         relative = "win",
         win = relative_win or vim.api.nvim_get_current_win(),
         style = "minimal",
-        col = 0,
-        row = 0,
         height = math.max(
             math.min(ui.max_height, vim.b[buf].chosen_height or 0),
             ui.min_height,
