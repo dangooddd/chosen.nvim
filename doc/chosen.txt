@@ -1,4 +1,4 @@
-*chosen.txt*            For NVIM v0.8.0           Last change: 2025 January 27
+*chosen.txt*           For NVIM v0.8.0           Last change: 2025 February 02
 
 ==============================================================================
 Table of Contents                                   *chosen-table-of-contents*
@@ -36,8 +36,10 @@ Default configuration options:
         -- h and l -- horizontal scroll
         -- j and k -- PageUp / PageDown
         bind_hjkl = true,
-        -- Exit on save / delete of current file
-        exit_on_save = false,
+        -- Close window on save / delete of current file action
+        close_on_save = false,
+        -- Close window on write action
+        close_on_write = true,
         -- Chosen ui options
         ui_options = {
             max_height = 10,
@@ -71,6 +73,8 @@ Default configuration options:
             split = "<C-s>",
             -- Toggle vsplit mode
             vsplit = "<C-v>",
+            -- Write Chosen index file on filesystem
+            write = "w",
         },
     })
 <
