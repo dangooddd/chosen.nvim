@@ -13,8 +13,10 @@ M.config = {
     -- h and l -- horizontal scroll
     -- j and k -- PageUp / PageDown
     bind_hjkl = true,
-    -- Exit on save / delete of current file
-    exit_on_save = false,
+    -- Close window on save / delete of current file action
+    close_on_save = false,
+    -- Close window on write action
+    close_on_write = true,
     -- Chosen ui options
     ui_options = {
         max_height = 10,
@@ -48,6 +50,8 @@ M.config = {
         split = "<C-s>",
         -- Toggle vsplit mode
         vsplit = "<C-v>",
+        -- Write Chosen index file on filesystem
+        write = "w",
     },
 }
 
@@ -120,7 +124,8 @@ end
 ---@field keys? string Keys that will be used to pick files
 ---@field autowrite? boolean Autowrite Chosen index file on exit
 ---@field bind_hjkl? boolean Change behaviour of hjkl keys in Chosen buffers
----@field exit_on_save? boolean Exit on save / delete of current file
+---@field close_on_save? boolean Close window on save / delete of current file action
+---@field close_on_write? boolean Close window on write action
 ---@field ui_options? chosen.UIOpts
 ---@field win_options? table<string, any> Window local options in Chosen buffers
 ---@field buf_options? table<string, any> Buffer local options in Chosen buffers
@@ -295,7 +300,7 @@ H.keymap_callbacks = {
             H.save_to_index(nil, vim.b[buf].chosen_fname)
         end
 
-        if M.config.exit_on_save then
+        if M.config.close_on_save then
             pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
         else
             H.refresh_win(buf)
@@ -320,6 +325,21 @@ H.keymap_callbacks = {
     ---@param buf chosen.Buf
     vsplit = function(buf)
         H.toggle_mode(buf, "split_vertical")
+    end,
+
+    ---@param buf chosen.Buf
+    write = function(buf)
+        M.dump_index()
+
+        -- response message
+        vim.api.nvim_echo({
+            { "Chosen",         "WarningMsg" },
+            { " index written", "MsgArea" },
+        }, false, {})
+
+        if M.config.close_on_write then
+            pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
+        end
     end,
 }
 

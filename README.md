@@ -1,4 +1,5 @@
 # chosen.nvim
+
 Quickly move between your chosen files, per-project.
 
 https://github.com/user-attachments/assets/58c5168e-ea43-4f11-9abc-8b7b94091009
@@ -36,6 +37,7 @@ require("chosen").setup()
 ```
 
 Then add binding to open Chosen window, for example:
+
 ```lua
 vim.keymap.set("n", "<Enter>", require("chosen").toggle)
 ```
@@ -75,8 +77,10 @@ require("chosen").setup({
     -- h and l -- horizontal scroll
     -- j and k -- PageUp / PageDown
     bind_hjkl = true,
-    -- Exit on save / delete of current file
-    exit_on_save = false,
+    -- Close window on save / delete of current file action
+    close_on_save = false,
+    -- Close window on write action
+    close_on_write = true,
     -- Chosen ui options
     ui_options = {
         max_height = 10,
@@ -110,6 +114,8 @@ require("chosen").setup({
         split = "<C-s>",
         -- Toggle vsplit mode
         vsplit = "<C-v>",
+        -- Write Chosen index file on filesystem
+        write = "w",
     },
 })
 ```

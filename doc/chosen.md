@@ -21,8 +21,10 @@ require("chosen").setup({
     -- h and l -- horizontal scroll
     -- j and k -- PageUp / PageDown
     bind_hjkl = true,
-    -- Exit on save / delete of current file
-    exit_on_save = false,
+    -- Close window on save / delete of current file action
+    close_on_save = false,
+    -- Close window on write action
+    close_on_write = true,
     -- Chosen ui options
     ui_options = {
         max_height = 10,
@@ -56,6 +58,8 @@ require("chosen").setup({
         split = "<C-s>",
         -- Toggle vsplit mode
         vsplit = "<C-v>",
+        -- Write Chosen index file on filesystem
+        write = "w",
     },
 })
 ```
@@ -138,6 +142,7 @@ require("chosen").setup({
 ```
 
 If you have issues because of cursor changes:
+
 ```lua
 vim.api.nvim_set_hl(0, "ChosenCursor", { link = "Cursor" })
 ```
