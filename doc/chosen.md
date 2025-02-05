@@ -25,6 +25,8 @@ require("chosen").setup({
     close_on_save = false,
     -- Close window on write action
     close_on_write = true,
+    -- Send notification on write action
+    notify_on_write = true,
     -- Chosen ui options
     ui_options = {
         max_height = 10,

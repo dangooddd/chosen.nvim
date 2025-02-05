@@ -17,6 +17,8 @@ M.config = {
     close_on_save = false,
     -- Close window on write action
     close_on_write = true,
+    -- Send notification on write action
+    notify_on_write = true,
     -- Chosen ui options
     ui_options = {
         max_height = 10,
@@ -126,6 +128,7 @@ end
 ---@field bind_hjkl? boolean Change behaviour of hjkl keys in Chosen buffers
 ---@field close_on_save? boolean Close window on save / delete of current file action
 ---@field close_on_write? boolean Close window on write action
+---@field notify_on_write? boolean Send notification on write action
 ---@field ui_options? chosen.UIOpts
 ---@field win_options? table<string, any> Window local options in Chosen buffers
 ---@field buf_options? table<string, any> Buffer local options in Chosen buffers
@@ -331,11 +334,9 @@ H.keymap_callbacks = {
     write = function(buf)
         M.dump_index()
 
-        -- response message
-        vim.api.nvim_echo({
-            { "Chosen",         "WarningMsg" },
-            { " index written", "MsgArea" },
-        }, false, {})
+        if M.config.notify_on_write then
+            vim.notify("Chosen index written", vim.log.levels.INFO)
+        end
 
         if M.config.close_on_write then
             pcall(vim.api.nvim_win_close, vim.fn.bufwinid(buf), false)
