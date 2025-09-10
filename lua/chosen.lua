@@ -68,14 +68,16 @@ end
 ---@param fname string
 ---@return string?, string?
 function H.get_icon(fname)
-    -- get any provider
-    local ok, icons = pcall(require, "nvim-web-devicons")
-    if not ok then ok, icons = pcall(require, "mini.icons") end
-    if not ok then return nil end
+    local ok_web_icons, web_icons = pcall(require, "nvim-web-devicons")
+    local ok_mini_icons, mini_icons = pcall(require, "mini.icons")
 
-    fname = vim.fn.fnamemodify(fname, ":t")
-    local ext = vim.fn.fnamemodify(fname, ":e")
-    return icons.get_icon(fname, ext, { default = true })
+    if ok_mini_icons then
+        return mini_icons.get("file", fname)
+    elseif ok_web_icons then
+        fname = vim.fn.fnamemodify(fname, ":t")
+        local ext = vim.fn.fnamemodify(fname, ":e")
+        return web_icons.get_icon(fname, ext, { default = true })
+    end
 end
 
 ---Get cwd with resolved links

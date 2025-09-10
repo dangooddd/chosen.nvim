@@ -50,8 +50,8 @@ Full example for lazy:
 -- plugins/chosen.lua
 return {
     "dangooddd/chosen.nvim",
-    dependencies = { "nvim-tree/nvim-web-devicons" }, -- optional
-    -- dependencies = { "echasnovski/mini.icons" }
+    dependencies = { "echasnovski/mini.icons" } -- optional
+    -- dependencies = { "nvim-tree/nvim-web-devicons" },
     keys = { "<Enter>" },
     cmd = "Chosen"
     config = function()
